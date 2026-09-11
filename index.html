@@ -958,7 +958,10 @@ async function openTourSearch(){
           <div class="small-muted">${esc(f.city)} · ${esc(f.duration)}${f.rating?' · ★ '+esc(f.rating):''}</div>
           <div style="font-weight:600;">${f.price ? money(f.price) + ' ' + f.currency : 'Fiyat belirtilmemiş'}</div>
         </div>
-        <button type="button" class="chip-btn" onclick="event.stopPropagation(); addTourResult(${i})">Ekle</button>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+          <button type="button" class="chip-btn" onclick="event.stopPropagation(); openTourLink(${i})">İncele</button>
+          <button type="button" class="chip-btn" onclick="event.stopPropagation(); addTourResult(${i})">Ekle</button>
+        </div>
       </div>`).join('');
   }catch(err){
     box.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. (' + err.message + ')</div>';
@@ -992,8 +995,12 @@ function pickTourResult(i){
   if(f.url){
     const noteEl = document.getElementById('newSub');
     if(!noteEl.value.trim()) noteEl.value = f.url;
-    window.open(f.url, '_blank');
   }
+}
+
+function openTourLink(i){
+  const f = window._tourResults[i];
+  if(f && f.url) window.open(f.url, '_blank');
 }
 
 function addTourResult(i){
