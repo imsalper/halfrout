@@ -637,7 +637,8 @@ function syncTaksiFields(){
     : 'Not (opsiyonel)';
   const dtLabel = document.getElementById('dateTimeLabel');
   if(cat === 'yemek' || cat === 'market' || cat === 'yapimarket'){ dtLabel.textContent = 'Buluşma saati'; }
-  else if(cat === 'gezi' || cat === 'konaklama'){ dtLabel.textContent = 'Gidiş (kalkış)'; }
+  else if(cat === 'gezi'){ dtLabel.textContent = 'Tur başlangıç tarihi ve saati'; }
+  else if(cat === 'konaklama'){ dtLabel.textContent = 'Gidiş (kalkış)'; }
   else { dtLabel.textContent = 'Tarih ve saat'; }
   if(cat==='taksi'){ ensureMap(); initTaksiRideApps(); }
 }
@@ -910,12 +911,18 @@ async function openTourSearch(){
       return;
     }
     window._tourResults = list;
-    box.innerHTML = list.map((t,i) => `
-      <div class="match-row" style="cursor:pointer;" onclick="pickTourResult(${i})">
-        <div style="font-weight:500;font-size:13px;">${esc(t.title||'İsimsiz tur')}</div>
-        <div class="small-muted">${esc(t.city||'')} · ${esc(t.duration||'')}${t.rating?' · ★ '+esc(String(t.rating)):''}</div>
-        <div style="font-weight:600;">${t.price ? money(t.price) + ' ' + (t.currency||'') : 'Fiyat belirtilmemiş'}</div>
-      </div>`).join('');
+    box.innerHTML = list.map((t,i) => {
+      const f = normalizeTour(t);
+      return `
+      <div class="match-row" style="cursor:pointer;gap:10px;" onclick="pickTourResult(${i})">
+        ${f.image ? `<img src="${esc(f.image)}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:500;font-size:13px;">${esc(f.title)}</div>
+          <div class="small-muted">${esc(f.city)} · ${esc(f.duration)}${f.rating?' · ★ '+esc(f.rating):''}</div>
+        </div>
+        <div style="font-weight:600;white-space:nowrap;">${f.price ? money(f.price) + ' ' + f.currency : 'Fiyat belirtilmemiş'}</div>
+      </div>`;
+    }).join('');
   }catch(err){
     box.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. server.py çalışıyor mu ve sayfayı localhost üzerinden mi açtın, kontrol et. (' + err.message + ')</div>';
   }finally{
@@ -924,15 +931,31 @@ async function openTourSearch(){
   }
 }
 
+function normalizeTour(t){
+  const title = t.title || t.name || t.tourTitle || t.activityTitle || t.tour_name || 'İsimsiz tur';
+  const price = t.price ?? t.priceFrom ?? t.price_from ?? t.startingPrice ?? (t.pricing && t.pricing.price) ?? null;
+  const currency = t.currency || t.currencyCode || (t.pricing && t.pricing.currency) || '';
+  const city = t.city || t.location || t.destination || '';
+  const duration = t.duration || t.durationText || '';
+  const rating = t.rating != null ? (Math.round(t.rating*10)/10) : (t.reviewScore || null);
+  let image = null;
+  if(Array.isArray(t.images) && t.images.length) image = typeof t.images[0] === 'string' ? t.images[0] : (t.images[0].url || t.images[0].src || null);
+  else if(typeof t.image === 'string') image = t.image;
+  else if(t.thumbnail) image = t.thumbnail;
+  const url = t.url || t.link || t.pageUrl || '';
+  return { title, price, currency, city, duration, rating, image, url };
+}
+
 function pickTourResult(i){
   const t = window._tourResults[i];
   if(!t) return;
-  if(!document.getElementById('newTitle').value.trim()) document.getElementById('newTitle').value = t.title;
-  if(t.price) document.getElementById('newTotal').value = Math.round(t.price);
-  if(t.url){
+  const f = normalizeTour(t);
+  if(!document.getElementById('newTitle').value.trim()) document.getElementById('newTitle').value = f.title;
+  if(f.price) document.getElementById('newTotal').value = Math.round(f.price);
+  if(f.url){
     const noteEl = document.getElementById('newSub');
-    if(!noteEl.value.trim()) noteEl.value = t.url;
-    window.open(t.url, '_blank');
+    if(!noteEl.value.trim()) noteEl.value = f.url;
+    window.open(f.url, '_blank');
   }
 }
 
