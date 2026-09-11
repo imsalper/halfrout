@@ -992,6 +992,7 @@ function pickTourResult(i){
   if(f.url){
     const noteEl = document.getElementById('newSub');
     if(!noteEl.value.trim()) noteEl.value = f.url;
+    window.open(f.url, '_blank');
   }
 }
 
@@ -1017,6 +1018,11 @@ async function fetchLinkPreview(){
       body: JSON.stringify({ url })
     });
     const data = await res.json();
+    if(data.blocked){
+      box.innerHTML = '<div class="small-muted">Bu site otomatik bilgi çekmeyi engelliyor (bot koruması). Başlık ve fotoğrafı elle gireceksin - yine de linki "Ekle" ile ekleyebilirsin.</div>' +
+        `<button type="button" class="chip-btn" style="margin-top:6px;" onclick="window._linkPreview={url:'${url.replace(/'/g,"\\'")}',title:'Tur',image:null}; addLinkPreview();">Yine de ekle</button>`;
+      return;
+    }
     window._linkPreview = { url, image: data.image || null, title: data.title || 'Tur' };
     box.innerHTML = `
       <div class="match-row" style="gap:10px;">
