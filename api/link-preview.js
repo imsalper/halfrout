@@ -10,9 +10,18 @@ module.exports = async (req, res) => {
       return;
     }
     const pageRes = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; HalfroutBot/1.0)" },
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "tr-TR,tr;q=0.9,en;q=0.8",
+      },
     });
     const html = await pageRes.text();
+
+    if (/just a moment|cf-browser-verification|cf_chl_opt|checking your browser/i.test(html)) {
+      res.status(200).json({ image: null, title: null, blocked: true });
+      return;
+    }
 
     const getMeta = (prop) => {
       let m = html.match(new RegExp(`<meta[^>]+property=["']${prop}["'][^>]+content=["']([^"']+)["']`, "i"));
