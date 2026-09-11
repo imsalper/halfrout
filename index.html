@@ -1187,6 +1187,7 @@ function submitPool(){
   let link = '';
   if(catId === 'konaklama') link = document.getElementById('konakLink').value.trim();
   else if(catId === 'yemek') link = document.getElementById('yemekLink').value.trim();
+  else if(catId === 'gezi' && /^https?:\/\//i.test(note)) link = note;
   const dateStr = document.getElementById('newDate').value;
   const timeStr = document.getElementById('newTime').value;
   const total = Number(document.getElementById('newTotal').value);
