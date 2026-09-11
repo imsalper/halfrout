@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Halfrout</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --paper:#F5F7FA; --ink:#0B1A33; --ink-muted:#5E6B7D; --ink-faint:#98A2B3;
+    --brand:#0A66C2; --brand-dark:#004182; --brand-tint:#E3EFFC;
+    --line:#DDE3EC; --card:#FFFFFF; --danger:#C0392B; --danger-tint:#FBEAE8;
+    --warn:#B7791F; --warn-tint:#FDF3DD;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Manrope',sans-serif;background:#E9EDF2;color:var(--ink);}
+  .phone{max-width:400px;margin:0 auto;min-height:100vh;background:var(--paper);display:flex;flex-direction:column;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px;}
+  .logo{font-size:19px;font-weight:700;letter-spacing:-0.02em;}
+  .tagline{font-size:11px;color:var(--ink-muted);}
+  .pill{font-size:12px;padding:5px 11px;border-radius:999px;background:var(--card);border:0.5px solid var(--line);color:var(--ink-muted);display:inline-flex;align-items:center;gap:4px;}
+  .screen{display:none;flex:1;padding:0 16px 16px;overflow-y:auto;}
+  .screen.active{display:block;}
+  .cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:14px;}
+  .cat-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;font-size:10px;border-radius:8px;border:0.5px solid var(--line);background:var(--card);color:var(--ink-muted);cursor:pointer;font-family:inherit;}
+  .cat-btn.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+  .cat-btn svg{width:18px;height:18px;}
+  .tools-row{display:flex;gap:8px;margin-bottom:14px;}
+  .tool-card{flex:1;background:var(--card);border:0.5px solid var(--line);border-radius:10px;padding:10px;font-size:12px;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit;}
+  .tool-card b{display:block;font-size:12px;margin-top:4px;}
+  .pool-card{display:flex;border-radius:10px;overflow:hidden;border:0.5px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer;}
+  .pool-info{flex:1;min-width:0;padding:11px 12px;}
+  .pool-title{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .pool-sub{font-size:11px;color:var(--ink-muted);margin-bottom:6px;}
+  .pool-joined{font-size:11px;color:var(--ink-faint);}
+  .pool-price{width:96px;flex-shrink:0;background:var(--brand-tint);padding:11px 10px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;}
+  .pool-price .label{font-size:10px;color:var(--brand-dark);}
+  .pool-price .amount{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:500;color:var(--brand-dark);}
+  .pool-price .strike{font-size:10px;color:var(--ink-faint);text-decoration:line-through;}
+  .btn-primary{width:100%;background:var(--brand);color:#fff;border:none;padding:12px;border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;}
+  .btn-secondary{width:100%;background:var(--card);color:var(--ink);border:0.5px solid var(--line);padding:11px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;}
+  .field{width:100%;padding:10px 12px;border:0.5px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:8px;background:var(--card);color:var(--ink);}
+  select.field{appearance:none;}
+  .section-title{font-size:13px;font-weight:500;margin:14px 0 8px;}
+  .card{background:var(--card);border:0.5px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;}
+  .card-muted{background:#EEF1F5;border-radius:12px;padding:14px;margin-bottom:12px;}
+  .row-between{display:flex;justify-content:space-between;align-items:baseline;}
+  .small-muted{font-size:11px;color:var(--ink-muted);}
+  .back-btn{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--brand);background:none;border:none;font-family:inherit;cursor:pointer;padding:8px 0 4px;}
+  .toggle-row{display:flex;gap:6px;margin-bottom:10px;}
+  .toggle-btn{flex:1;padding:8px;font-size:12px;border-radius:8px;border:0.5px solid var(--line);background:var(--card);color:var(--ink-muted);font-family:inherit;cursor:pointer;}
+  .toggle-btn.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+  .match-row{display:flex;align-items:center;gap:10px;padding:9px 10px;border:0.5px solid var(--line);border-radius:8px;margin-bottom:6px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--brand-tint);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--brand-dark);flex-shrink:0;}
+  .avatar-lg{width:54px;height:54px;font-size:18px;}
+  .chip-btn{font-size:11px;padding:5px 11px;border-radius:8px;border:0.5px solid var(--line);background:var(--card);font-family:inherit;cursor:pointer;}
+  .chat-bubble{padding:6px 10px;border-radius:8px;font-size:12px;max-width:75%;margin-bottom:6px;}
+  .chat-them{background:#EEF1F5;color:var(--ink);align-self:flex-start;}
+  .chat-me{background:var(--brand);color:#fff;align-self:flex-end;margin-left:auto;}
+  .err-text{font-size:11px;color:var(--danger);margin:4px 0 8px;}
+  .warn-box{font-size:12px;color:var(--warn);background:var(--warn-tint);padding:8px 12px;border-radius:8px;margin-bottom:10px;}
+  .lock-note{opacity:0.45;}
+  .bottomnav{display:grid;grid-template-columns:repeat(4,1fr);border-top:0.5px solid var(--line);background:var(--card);}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 0 12px;color:var(--ink-faint);background:none;border:none;font-family:inherit;cursor:pointer;}
+  .nav-item.active{color:var(--brand);}
+  .nav-item svg{width:19px;height:19px;}
+  .nav-item span{font-size:10px;}
+  .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:14px;}
+  .metric{background:#EEF1F5;border-radius:8px;padding:12px;}
+  .metric .label{font-size:11px;color:var(--ink-muted);}
+  .metric .value{font-size:20px;font-weight:500;}
+  .bar-track{flex:1;background:#EEF1F5;border-radius:4px;height:6px;overflow:hidden;}
+  .bar-fill{height:100%;background:var(--brand);}
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--brand);outline-offset:1px;}
+  .addr-wrap{position:relative;margin-bottom:8px;}
+  .addr-suggestions{position:relative;background:var(--card);border:0.5px solid var(--line);border-radius:8px;max-height:160px;overflow-y:auto;margin-top:-4px;margin-bottom:4px;display:none;}
+  .addr-suggestion{padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:0.5px solid var(--line);}
+  .addr-suggestion:last-child{border-bottom:none;}
+  #taksiMap, #yemekMap, #marketMeetMap{width:100%;height:160px;border-radius:8px;margin-bottom:10px;display:none;}
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <div class="topbar">
+    <div>
+      <div class="logo">Halfrout</div>
+      <div class="tagline">Paylaş, ucuzlat</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="pill" id="locPill">📍 İzmir</span>
+      <span style="font-size:16px;" id="locFlag">🇹🇷</span>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <section class="screen active" id="screen-home">
+    <div class="cat-grid" id="catGrid"></div>
+
+    <div class="tools-row" id="toolsRow">
+      <button class="tool-card" id="toolTaksi" onclick="showScreen('taksi-tool')">🚕<b>Taksi ücret tahmini</b></button>
+      <button class="tool-card" id="toolKonaklama" onclick="showScreen('konaklama-tool')">🛏️<b>Konaklama hesabı</b></button>
+    </div>
+
+    <div id="poolList"></div>
+
+    <button class="btn-primary" onclick="openCreate()">+ Yeni havuz aç</button>
+  </section>
+
+  <!-- CREATE POOL -->
+  <section class="screen" id="screen-create">
+    <button class="back-btn" onclick="showScreen('home')">← Geri</button>
+    <div class="section-title">Yeni havuz aç</div>
+    <select class="field" id="newCat"></select>
+    <input class="field" id="newTitle" type="text" placeholder="Başlık (ör. Alsancak - Konak taksi)">
+    <input class="field" id="newSub" type="text" placeholder="Not (opsiyonel)">
+    <div id="flightNoteInfo" style="display:none;margin-bottom:8px;"></div>
+    <div class="small-muted" id="dateTimeLabel" style="margin:-6px 0 6px;">Gidiş (kalkış)</div>
+    <div style="display:flex;gap:8px;">
+      <input class="field" id="newDate" type="date" style="flex:1;">
+      <input class="field" id="newTime" type="time" style="flex:1;">
+    </div>
+    <div id="flightArrBox" style="display:none;">
+      <div class="small-muted" style="margin:-6px 0 6px;">Varış</div>
+      <div style="display:flex;gap:8px;">
+        <input class="field" id="newArrDate" type="date" style="flex:1;">
+        <input class="field" id="newArrTime" type="time" style="flex:1;">
+      </div>
+    </div>
+
+    <div id="taksiFields" style="display:none;">
+      <div id="taksiCountryBox" style="margin-bottom:8px;">
+        <div class="small-muted" id="taksiCountryStatus">Konum kontrol ediliyor...</div>
+        <select class="field" id="taksiCountrySelect" style="display:none;"></select>
+      </div>
+      <div id="taksiAppButtons" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;"></div>
+      <div id="grabPriceInfo" style="display:none;margin-bottom:10px;"></div>
+      <div class="addr-wrap">
+        <input class="field" id="addrFrom" type="text" placeholder="Nereden (adres yazmaya başla)" autocomplete="off">
+        <div class="addr-suggestions" id="suggFrom"></div>
+      </div>
+      <div class="addr-wrap">
+        <input class="field" id="addrTo" type="text" placeholder="Nereye (adres yazmaya başla)" autocomplete="off">
+        <div class="addr-suggestions" id="suggTo"></div>
+      </div>
+      <div id="taksiMap"></div>
+      <div class="small-muted" id="taksiFareHint" style="margin-bottom:8px;"></div>
+      <label class="small-muted">Kaç kişi binecek?</label>
+      <input class="field" id="taksiPersonCount" type="number" min="1" max="20" value="1">
+      <div class="small-muted" id="taksiPerPersonHint" style="margin-bottom:8px;"></div>
+    </div>
+
+    <div id="geziFields" style="display:none;">
+      <input class="field" id="geziDest" type="text" placeholder="Nereye gidiyorsun (ör. Efes, Roma)">
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input class="field" id="geziFrom" type="date" style="flex:1;margin:0;">
+        <input class="field" id="geziTo" type="date" style="flex:1;margin:0;">
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <button type="button" class="btn-secondary" id="tourSearchBtn" onclick="openTourSearch()" style="flex:1;">Gerçek tur ara</button>
+        <button type="button" class="btn-secondary" onclick="window.open('https://www.getyourguide.com/s/?q='+encodeURIComponent(document.getElementById('geziDest').value.trim()||''),'_blank')">Viator/GYG siteyi aç</button>
+      </div>
+      <div id="tourResults" style="display:none;margin-bottom:10px;"></div>
+      <div class="small-muted" style="margin-bottom:8px;">Gerçek sitede gezi bul, adını ve kişi başı fiyatını görüp aşağıya kendin gir.</div>
+      <label class="small-muted">Maksimum kişi sayısı (en fazla 20)</label>
+      <input class="field" id="geziMax" type="number" min="2" max="20" value="10">
+    </div>
+
+    <div id="yemekFields" style="display:none;">
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input class="field" id="restSearch" type="text" placeholder="Restoran/zincir adı yaz (ör. McDonald's Didim)" autocomplete="off" style="flex:1;margin:0;">
+        <button type="button" class="btn-secondary" onclick="openMenuSearch()" style="width:auto;padding:0 14px;">Ara</button>
+      </div>
+      <div id="menuResults" style="display:none;margin-bottom:10px;"></div>
+      <button type="button" class="btn-secondary" id="dealSearchBtn" onclick="openDealSearch()" style="margin-bottom:10px;width:100%;">1 alana 1 bedava / indirim ara</button>
+      <div id="dealResults" style="display:none;margin-bottom:10px;"></div>
+      <input class="field" id="yemekLink" type="url" placeholder="Kampanya linki (arama sonucundan seç ya da kendi linkini yapıştır)">
+      <div class="small-muted" style="margin-bottom:8px;">Fiyatı bulabilirsek otomatik yazarız; bulamazsak linke bakıp aşağıya kendin gir.</div>
+    </div>
+
+
+    <div id="konaklamaFields" style="display:none;">
+      <input class="field" id="konakDest" type="text" placeholder="Otel adı veya şehir (ör. Çeşme, Roma)">
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input class="field" id="konakIn" type="date" style="flex:1;margin:0;" placeholder="Giriş">
+        <input class="field" id="konakOut" type="date" style="flex:1;margin:0;" placeholder="Çıkış">
+      </div>
+      <label class="small-muted" style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+        <input type="checkbox" id="konakTwinOnly" checked style="width:auto;margin:0;">
+        Sadece 2 ayrı (tek kişilik) yataklı odaları göster
+      </label>
+      <label class="small-muted">Kiminle kalmak istersin?</label>
+      <select class="field" id="konakGenderPref">
+        <option value="fark">Fark etmez</option>
+        <option value="kadin">Sadece kadınla</option>
+        <option value="erkek">Sadece erkekle</option>
+      </select>
+      <button type="button" class="btn-secondary" id="hotelSearchBtn" onclick="openHotelSearch()" style="margin-bottom:10px;">Gerçek otel ara</button>
+      <div id="konakResults" style="display:none;margin-bottom:10px;"></div>
+      <input class="field" id="konakLink" type="url" placeholder="Otel sayfası linki (listeden seç ya da elle yapıştır)">
+      <div class="small-muted" style="margin-bottom:8px;">Yukarıdan gerçek bir otel bul ve seç, adı/fiyatı otomatik dolsun; istersen kendi bulduğun linki de elle yapıştırabilirsin. Tanımadığın biriyle eşleşince güvenlik için ayrı yataklı oda önerilir.</div>
+    </div>
+
+    <div id="marketFields" style="display:none;">
+      <label class="small-muted">Buluşma noktası</label>
+      <div class="addr-wrap">
+        <input class="field" id="marketMeetPoint" type="text" placeholder="Adres yazmaya başla (ör. Didim Migros önü)" autocomplete="off">
+        <div class="addr-suggestions" id="suggMarketMeet"></div>
+      </div>
+      <div id="marketMeetMap"></div>
+      <button type="button" class="btn-secondary" id="marketMeetGoBtn" onclick="openMarketMeetDirections()" style="display:none;margin-bottom:10px;width:100%;">📍 Konuma git</button>
+      <input class="field" id="marketName" type="text" placeholder="Market adı (aramadan otomatik dolar, elle de yazabilirsin)">
+      <input class="field" id="marketProduct" type="text" placeholder="1 alana 1 bedava / indirimli ürün adı">
+      <input class="field" id="marketQuery" type="text" placeholder="Ürün/marka ara (opsiyonel, boş bırakırsan tüm indirimler gelir)">
+      <button type="button" class="btn-secondary" id="marketSearchBtn" onclick="openMarketSearch()" style="margin-bottom:10px;width:100%;">A101 / BİM / ŞOK gerçek indirimlerini ara</button>
+      <div id="marketResults" style="display:none;margin-bottom:10px;"></div>
+      <div class="small-muted" style="margin-bottom:8px;">Gerçek haftalık kampanya listesinden seç, market adı/ürün/fiyat otomatik dolsun.</div>
+    </div>
+
+    <div id="loungeFields" style="display:none;">
+      <input class="field" id="loungeFlightNo" type="text" placeholder="Uçuş no (ör. TK1978)">
+      <div id="loungeFlightInfo" style="display:none;margin-bottom:8px;"></div>
+      <div class="small-muted" style="margin-bottom:8px;">Bileti alan yolcuya lounge'a 1 misafir götürme hakkı tanıyorsa, o hakkı buradan sat. Aşağıdaki "Toplam tutar" satmak istediğin fiyat olur. 5 kişiye kadar teklif verebilir, hangisini kabul edersen onunla havuz oluşur.</div>
+      <label class="small-muted">Kiminle gitmek istersin?</label>
+      <select class="field" id="loungeGenderPref">
+        <option value="fark">Fark etmez</option>
+        <option value="kadin">Sadece kadınla</option>
+        <option value="erkek">Sadece erkekle</option>
+      </select>
+    </div>
+
+    <div id="alisverisFields" style="display:none;">
+      <div class="small-muted" style="margin-bottom:6px;">Bu bir alt kategoriye mi ait?</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <button type="button" class="btn-secondary" onclick="switchToCategory('yemek')">🍕 Yemek</button>
+        <button type="button" class="btn-secondary" onclick="switchToCategory('giyim')">👕 Giyim</button>
+        <button type="button" class="btn-secondary" onclick="switchToCategory('market')">🛒 Market</button>
+        <button type="button" class="btn-secondary" onclick="switchToCategory('yapimarket')">🔧 Yapı Market</button>
+      </div>
+    </div>
+
+    <input class="field" id="newTotal" type="number" placeholder="Toplam tutar (₺)" min="1">
+    <div class="err-text" id="createErr" style="display:none;"></div>
+    <button class="btn-primary" onclick="submitPool()">Havuzu oluştur</button>
+  </section>
+
+  <!-- POOL DETAIL / CHAT -->
+  <section class="screen" id="screen-detail">
+    <button class="back-btn" onclick="showScreen('home')">← Geri</button>
+    <div class="card" id="detailHeader"></div>
+    <div class="warn-box" id="lockNotice" style="display:none;">Aktif bir eşleşmen var. Yeni biriyle eşleşmeden önce mevcut eşleşmeyi onaylaman veya bitirmen gerekir.</div>
+    <div class="section-title">Eşleşme talepleri</div>
+    <div id="requestList"></div>
+    <div class="card" id="chatPanel" style="display:none;"></div>
+  </section>
+
+  <!-- TAKSI TOOL -->
+  <section class="screen" id="screen-taksi-tool">
+    <button class="back-btn" onclick="showScreen('home')">← Geri</button>
+    <div class="section-title">Anlık ücret tahmini</div>
+    <label class="small-muted">Nereden</label>
+    <select class="field" id="fareFrom"></select>
+    <label class="small-muted">Nereye</label>
+    <select class="field" id="fareTo"></select>
+    <div class="card" id="fareResult"></div>
+    <label class="small-muted">Kaç kişi bölüşecek</label>
+    <input type="range" min="1" max="4" step="1" value="1" id="farePeople" style="width:100%;">
+  </section>
+
+  <!-- KONAKLAMA TOOL -->
+  <section class="screen" id="screen-konaklama-tool">
+    <button class="back-btn" onclick="showScreen('home')">← Geri</button>
+    <div class="section-title">Konaklama hesabı</div>
+    <input class="field" id="hotelSearch" type="text" placeholder="Şehir veya otel ara">
+    <div id="hotelList" style="margin-bottom:12px;"></div>
+    <div class="card" id="hotelDetail" style="display:none;"></div>
+    <div id="roommateSection" style="display:none;">
+      <div class="row-between" style="margin:14px 0 8px;">
+        <span class="section-title" style="margin:0;">Oda arkadaşı adayları</span>
+        <select class="field" id="genderFilter" style="width:auto;margin:0;padding:6px 8px;">
+          <option value="all">Tümü</option>
+          <option value="f">Kadın</option>
+          <option value="m">Erkek</option>
+        </select>
+      </div>
+      <div id="roommateList"></div>
+    </div>
+  </section>
+
+  <!-- YOL ARKADASI -->
+  <section class="screen" id="screen-companion">
+    <div class="section-title" style="margin-top:14px;">Yol arkadaşı bul</div>
+    <div class="toggle-row">
+      <button class="toggle-btn active" id="btnModeFlight">Uçuş</button>
+      <button class="toggle-btn" id="btnModeGround">Otobüs / tren / vapur</button>
+    </div>
+    <input class="field" id="compCode" type="text" placeholder="Uçuş no (ör. XQ916)">
+    <button type="button" class="btn-secondary" id="flightLookupBtn" onclick="openFlightLookup()" style="margin-bottom:8px;">Uçuşu getir</button>
+    <div id="flightInfo" style="display:none;margin-bottom:10px;"></div>
+    <div style="display:flex;gap:8px;">
+      <input class="field" id="compFrom" type="text" placeholder="Nereden" style="display:none;">
+      <input class="field" id="compTo" type="text" placeholder="Nereye" style="display:none;">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <input class="field" id="compDate" type="date" style="flex:1;">
+      <input class="field" id="compTime" type="time" style="flex:1;display:none;">
+    </div>
+    <div class="err-text" id="compErr" style="display:none;"></div>
+    <button class="btn-secondary" onclick="findCompanions()" style="margin-bottom:14px;">Yol arkadaşı ara</button>
+    <div class="card" id="compMine" style="display:none;"></div>
+    <div id="compMatches"></div>
+  </section>
+
+  <!-- PROFIL -->
+  <section class="screen" id="screen-profil">
+    <div id="profilContent"></div>
+  </section>
+
+  <!-- ADMIN -->
+  <section class="screen" id="screen-admin">
+    <div class="section-title" style="margin-top:14px;">Yönetim paneli</div>
+    <div class="metric-grid">
+      <div class="metric"><div class="label">toplam kullanıcı</div><div class="value">18,420</div></div>
+      <div class="metric"><div class="label">bugünkü ziyaret</div><div class="value">2,104</div></div>
+      <div class="metric"><div class="label">aktif havuz</div><div class="value">647</div></div>
+      <div class="metric"><div class="label">ort. güven puanı</div><div class="value">4.7</div></div>
+    </div>
+    <div class="section-title">Ülkelere göre kullanıcılar</div>
+    <div id="countryList" style="margin-bottom:14px;"></div>
+    <div class="section-title">Üyeler</div>
+    <input class="field" id="adminSearch" type="text" placeholder="İsim veya şehir ara">
+    <div id="adminUsers"></div>
+    <div class="card" id="adminDetail" style="display:none;"></div>
+  </section>
+
+  <div class="bottomnav">
+    <button class="nav-item active" data-nav="home" onclick="showScreen('home')">🏠<span>Ana sayfa</span></button>
+    <button class="nav-item" data-nav="companion" onclick="showScreen('companion')">🧳<span>Yol arkadaşı</span></button>
+    <button class="nav-item" data-nav="profil" onclick="showScreen('profil')">👤<span>Profil</span></button>
+    <button class="nav-item" data-nav="admin" onclick="showScreen('admin')">🛡️<span>Admin</span></button>
+  </div>
+</div>
+
+<script>
+function money(n){ return Math.round(n).toLocaleString('tr-TR'); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+const NAV_SCREENS = ['home','companion','profil','admin'];
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.nav===name));
+  window.scrollTo(0,0);
+  if(name === 'profil') renderProfil();
+}
+
+/* ---------- CATEGORIES + HOME ---------- */
+const CATS = [
+  {id:'all', label:'Tümü', emoji:'🔳'},
+  {id:'taksi', label:'Taksi', emoji:'🚕'},
+  {id:'gezi', label:'Gezi', emoji:'🗺️'},
+  {id:'konaklama', label:'Konaklama', emoji:'🛏️'},
+  {id:'yemek', label:'Yemek', emoji:'🍕'},
+  {id:'alisveris', label:'Alışveriş', emoji:'🛍️'},
+  {id:'giyim', label:'Giyim', emoji:'👕'},
+  {id:'market', label:'Market', emoji:'🛒'},
+  {id:'yapimarket', label:'Yapı Market', emoji:'🔧'},
+  {id:'lounge', label:'Lounge', emoji:'🛋️'},
+  {id:'diger', label:'Diğer', emoji:'✨'}
+];
+
+let POOLS = [
+  {cat:'taksi', emoji:'🚕', title:'Adnan Menderes - Alsancak', sub:'Bu akşam 21:30, uçaktan iniş', joined:2, total:420},
+  {cat:'gezi', emoji:'🗺️', title:'Efes tur bileti grubu', sub:'10 kişi olunca kişi başı düşüyor', joined:6, total:1200, maxPeople:20, confirmed:false},
+  {cat:'alisveris', emoji:'🛍️', title:'1 alana 1 bedava süpürge', sub:'Migros, iade son gün cuma', joined:1, total:890},
+  {cat:'yemek', emoji:'🍕', title:'Aile boyu pizza menüsü', sub:'Alsancak şubesi, bu akşam', joined:2, total:340},
+  {cat:'konaklama', emoji:'🛏️', title:'Çeşme hafta sonu villa', sub:'6 kişilik, cuma-pazar', joined:3, total:6000},
+  {cat:'giyim', emoji:'👕', title:'2 al 1 öde tişört kampanyası', sub:'Zara, bu hafta sonu son gün', joined:1, total:600},
+  {cat:'lounge', emoji:'🛋️', title:'İstanbul Lounge misafir hakkı', sub:'TK1978 · bu akşam uçuşu', joined:1, total:800, flightNo:'TK1978', offers:null, acceptedOfferId:null}
+];
+
+let activeCat = 'all';
+const SUB_CATS = ['yemek','giyim','market','yapimarket'];
+function renderCats(){
+  const inAlisveris = activeCat === 'alisveris' || SUB_CATS.includes(activeCat);
+  let gridCats;
+  if(inAlisveris){
+    gridCats = [
+      {id:'alisveris', label:'← Tümü', emoji:'🔙'},
+      ...CATS.filter(c=>SUB_CATS.includes(c.id))
+    ];
+  } else {
+    gridCats = CATS.filter(c=>!SUB_CATS.includes(c.id));
+  }
+  document.getElementById('catGrid').innerHTML = gridCats.map(c => `
+    <button class="cat-btn ${activeCat===c.id?'active':''}" data-cat="${c.id}">
+      <span style="font-size:16px;">${c.emoji}</span>${c.label}
+    </button>`).join('');
+  document.querySelectorAll('.cat-btn').forEach(b => b.onclick = () => {
+    if(inAlisveris && b.dataset.cat === 'alisveris'){ activeCat = 'all'; }
+    else { activeCat = b.dataset.cat; }
+    renderCats(); renderPools();
+  });
+  document.getElementById('toolTaksi').style.display = (activeCat==='all' || activeCat==='taksi') ? 'block' : 'none';
+  document.getElementById('toolKonaklama').style.display = (activeCat==='konaklama') ? 'block' : 'none';
+  const toolsRow = document.getElementById('toolsRow');
+  toolsRow.style.display = (document.getElementById('toolTaksi').style.display==='none' && document.getElementById('toolKonaklama').style.display==='none') ? 'none' : 'flex';
+}
+
+function genderBadge(p){
+  if(!p.genderPref) return '';
+  const label = p.genderPref === 'kadin' ? '👩 Sadece kadın' : '👨 Sadece erkek';
+  return `<span class="chip-btn" style="margin-left:6px;font-size:11px;">${label}</span>`;
+}
+
+/* ---------- ÜYELİK / PROFİL ---------- */
+let CURRENT_USER = null; // null = henüz üye olunmadı
+
+function renderProfil(){
+  const box = document.getElementById('profilContent');
+  if(!CURRENT_USER){
+    box.innerHTML = renderSignupFormHtml();
+    return;
+  }
+  if(window._profilEditing){
+    box.innerHTML = renderSignupFormHtml(CURRENT_USER, true);
+    return;
+  }
+  box.innerHTML = renderProfileViewHtml(CURRENT_USER);
+}
+
+function renderSignupFormHtml(existing, isEdit){
+  const u = existing || {nickname:'', phone:'', gender:'fark', realName:'', city:'', education:'', languages:'', travel:[]};
+  return `
+    <div class="section-title" style="margin-top:14px;">${isEdit ? 'Kişisel bilgileri düzenle' : 'Üye ol'}</div>
+    <div class="small-muted" style="margin-bottom:10px;">★ ile işaretli alanlar zorunlu. Rumuz (nickname) diğer kullanıcılara görünür; ad-soyad ve telefon sadece sende kalır, kimseyle paylaşılmaz.</div>
+    <label class="small-muted">Rumuz / kullanıcı adı ★</label>
+    <input class="field" id="regNickname" type="text" placeholder="ör. gezginElif" value="${esc(u.nickname)}">
+    <label class="small-muted">Cep telefonu ★ <span style="opacity:.7;">(gizli tutulur)</span></label>
+    <input class="field" id="regPhone" type="tel" placeholder="05xx xxx xx xx" value="${esc(u.phone)}">
+    <label class="small-muted">Ad soyad <span style="opacity:.7;">(gizli tutulur, sadece sende görünür)</span></label>
+    <input class="field" id="regRealName" type="text" placeholder="Gerçek adın (opsiyonel)" value="${esc(u.realName||'')}">
+    <label class="small-muted">Cinsiyet</label>
+    <select class="field" id="regGender">
+      <option value="fark" ${u.gender==='fark'?'selected':''}>Belirtmek istemiyorum</option>
+      <option value="kadin" ${u.gender==='kadin'?'selected':''}>Kadın</option>
+      <option value="erkek" ${u.gender==='erkek'?'selected':''}>Erkek</option>
+    </select>
+    <label class="small-muted">Yaşadığı yer</label>
+    <input class="field" id="regCity" type="text" placeholder="ör. İzmir, Türkiye" value="${esc(u.city||'')}">
+    <label class="small-muted">Eğitim durumu <span style="opacity:.7;">(diğer üyeler görebilir)</span></label>
+    <input class="field" id="regEducation" type="text" placeholder="ör. Ege Üniversitesi, Turizm İşletmeciliği" value="${esc(u.education||'')}">
+    <label class="small-muted">Bildiği yabancı diller <span style="opacity:.7;">(virgülle ayır, diğer üyeler görebilir)</span></label>
+    <input class="field" id="regLanguages" type="text" placeholder="ör. İngilizce, İspanyolca" value="${esc(u.languages||'')}">
+    <div class="err-text" id="regErr" style="display:none;"></div>
+    <button class="btn-primary" onclick="${isEdit ? 'saveProfileEdit()' : 'saveSignup()'}">${isEdit ? 'Kaydet' : 'Kaydol'}</button>
+    ${isEdit ? `<button class="btn-secondary" style="margin-top:8px;" onclick="cancelProfileEdit()">Vazgeç</button>` : ''}
+  `;
+}
+
+function saveSignup(){
+  const nickname = document.getElementById('regNickname').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const errEl = document.getElementById('regErr');
+  if(!nickname || !phone){
+    errEl.textContent = 'Rumuz ve cep telefonu zorunlu.';
+    errEl.style.display = 'block';
+    return;
+  }
+  CURRENT_USER = {
+    nickname, phone,
+    realName: document.getElementById('regRealName').value.trim(),
+    gender: document.getElementById('regGender').value,
+    city: document.getElementById('regCity').value.trim(),
+    education: document.getElementById('regEducation').value.trim(),
+    languages: document.getElementById('regLanguages').value.trim(),
+    travel: [],
+    trust: 5.0, completedPools: 0
+  };
+  renderProfil();
+}
+
+function cancelProfileEdit(){
+  window._profilEditing = false;
+  renderProfil();
+}
+
+function saveProfileEdit(){
+  const nickname = document.getElementById('regNickname').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const errEl = document.getElementById('regErr');
+  if(!nickname || !phone){
+    errEl.textContent = 'Rumuz ve cep telefonu zorunlu.';
+    errEl.style.display = 'block';
+    return;
+  }
+  CURRENT_USER.nickname = nickname;
+  CURRENT_USER.phone = phone;
+  CURRENT_USER.realName = document.getElementById('regRealName').value.trim();
+  CURRENT_USER.gender = document.getElementById('regGender').value;
+  CURRENT_USER.city = document.getElementById('regCity').value.trim();
+  CURRENT_USER.education = document.getElementById('regEducation').value.trim();
+  CURRENT_USER.languages = document.getElementById('regLanguages').value.trim();
+  window._profilEditing = false;
+  renderProfil();
+}
+
+function renderProfileViewHtml(u){
+  const langChips = (u.languages||'').split(',').map(s=>s.trim()).filter(Boolean)
+    .map(l => `<span class="chip-btn" style="margin-right:4px;">${esc(l)}</span>`).join('') || '<span class="small-muted">Belirtilmemiş</span>';
+  const travelHtml = (u.travel||[]).length
+    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${u.travel.map((t,i) => `
+        <div class="card" style="padding:8px;">
+          ${t.photo ? `<img src="${t.photo}" style="width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:6px;">` : ''}
+          <div style="font-size:12px;font-weight:500;">${esc(t.place)}</div>
+          <button class="chip-btn" style="margin-top:4px;" onclick="removeTravelEntry(${i})">Kaldır</button>
+        </div>`).join('')}</div>`
+    : '<div class="small-muted">Henüz gezi eklemedin.</div>';
+  return `
+    <div style="display:flex;gap:12px;align-items:center;margin:14px 0;">
+      <div class="avatar avatar-lg">${esc((u.nickname||'?')[0].toUpperCase())}</div>
+      <div>
+        <div style="font-size:15px;font-weight:500;">${esc(u.nickname)}</div>
+        <div class="small-muted">★ ${u.trust.toFixed(1)} · ${u.completedPools} tamamlanmış havuz</div>
+      </div>
+    </div>
+    <button class="btn-secondary" style="margin-bottom:12px;" onclick="startProfileEdit()">Kişisel bilgileri düzenle</button>
+    <div class="card">
+      <div class="small-muted" style="margin-bottom:8px;">Diğer üyeler sadece aşağıdaki bilgileri görebilir; ad-soyad ve telefon numaran gizli kalır.</div>
+      <div class="row-between" style="align-items:flex-start;margin-bottom:8px;">
+        <div><div class="small-muted">yaşadığı yer</div><div style="font-size:13px;">${esc(u.city)||'<span class=\"small-muted\">Belirtilmemiş</span>'}</div></div>
+      </div>
+      <div class="row-between" style="align-items:flex-start;margin-bottom:8px;">
+        <div><div class="small-muted">eğitim</div><div style="font-size:13px;">${esc(u.education)||'<span class=\"small-muted\">Belirtilmemiş</span>'}</div></div>
+      </div>
+      <div class="small-muted" style="margin-bottom:4px;">bildiği diller</div>
+      <div style="margin-bottom:4px;">${langChips}</div>
+    </div>
+    <div class="section-title">Gezi geçmişi</div>
+    <div style="margin-bottom:10px;">
+      <input class="field" id="travelPlace" type="text" placeholder="Gezdiğin yer (ör. Roma)">
+      <input type="file" id="travelPhoto" accept="image/*" style="margin-bottom:8px;">
+      <button class="btn-secondary" onclick="addTravelEntry()">Gezi ekle</button>
+    </div>
+    <div id="tripList">${travelHtml}</div>
+  `;
+}
+
+function startProfileEdit(){
+  window._profilEditing = true;
+  renderProfil();
+}
+
+function addTravelEntry(){
+  const place = document.getElementById('travelPlace').value.trim();
+  const fileInput = document.getElementById('travelPhoto');
+  if(!place){ alert('Önce gezdiğin yerin adını yaz.'); return; }
+  const file = fileInput.files[0];
+  const push = (photoDataUrl) => {
+    CURRENT_USER.travel.push({place, photo: photoDataUrl || null});
+    renderProfil();
+  };
+  if(file){
+    const reader = new FileReader();
+    reader.onload = e => push(e.target.result);
+    reader.readAsDataURL(file);
+  } else {
+    push(null);
+  }
+}
+
+function removeTravelEntry(i){
+  CURRENT_USER.travel.splice(i,1);
+  renderProfil();
+}
+
+function renderPools(){
+  const filtered = activeCat==='all' ? POOLS : POOLS.filter(p=>p.cat===activeCat);
+  document.getElementById('poolList').innerHTML = filtered.map(p => {
+    const idx = POOLS.indexOf(p);
+    if(p.cat === 'lounge'){
+      const sold = !!p.acceptedOfferId;
+      return `
+      <div class="pool-card" onclick="openDetail(${idx})">
+        <div class="pool-info">
+          <div class="pool-title">${p.emoji} ${esc(p.title)}${genderBadge(p)}</div>
+          <div class="pool-sub">${esc(p.sub)}</div>
+          <div class="pool-joined">${sold ? '✓ satıldı' : 'Teklif bekleniyor'}</div>
+        </div>
+        <div class="pool-price">
+          <div class="label">istenen fiyat</div>
+          <div class="amount">${money(p.total)}₺</div>
+        </div>
+      </div>`;
+    }
+    const per = p.total / p.joined;
+    return `
+    <div class="pool-card" onclick="openDetail(${idx})">
+      <div class="pool-info">
+        <div class="pool-title">${p.emoji} ${esc(p.title)}${genderBadge(p)}</div>
+        <div class="pool-sub">${esc(p.sub)}</div>
+        <div class="pool-joined">${p.maxPeople ? p.joined + ' / ' + p.maxPeople + ' kişi katıldı' : p.joined + ' kişi katıldı'}${p.confirmed ? ' · ✓ onaylandı' : ''}</div>
+      </div>
+      <div class="pool-price">
+        <div class="label">kişi başı</div>
+        <div class="amount">${money(per)}₺</div>
+        <div class="strike">${money(p.total)}₺</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+const newCat = document.getElementById('newCat');
+newCat.innerHTML = CATS.filter(c=>c.id!=='all').map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
+function openCreate(){
+  if(activeCat !== 'all'){ newCat.value = activeCat; }
+  showScreen('create');
+  syncTaksiFields();
+  document.getElementById('flightNoteInfo').style.display = 'none';
+  document.getElementById('flightArrBox').style.display = 'none';
+}
+
+function syncTaksiFields(){
+  const cat = newCat.value;
+  document.getElementById('taksiFields').style.display = cat==='taksi' ? 'block' : 'none';
+  document.getElementById('geziFields').style.display = cat==='gezi' ? 'block' : 'none';
+  document.getElementById('yemekFields').style.display = cat==='yemek' ? 'block' : 'none';
+  document.getElementById('konaklamaFields').style.display = cat==='konaklama' ? 'block' : 'none';
+  document.getElementById('loungeFields').style.display = cat==='lounge' ? 'block' : 'none';
+  document.getElementById('marketFields').style.display = (cat==='market' || cat==='yapimarket') ? 'block' : 'none';
+  document.getElementById('alisverisFields').style.display = cat==='alisveris' ? 'block' : 'none';
+  const subEl = document.getElementById('newSub');
+  subEl.placeholder = (typeof FLIGHT_NOTE_CATS !== 'undefined' && FLIGHT_NOTE_CATS.includes(cat))
+    ? 'Not (opsiyonel, ör. uçuş no: XQ0916 yazarsan saatleri otomatik doldururuz)'
+    : 'Not (opsiyonel)';
+  const dtLabel = document.getElementById('dateTimeLabel');
+  if(cat === 'yemek' || cat === 'market' || cat === 'yapimarket'){ dtLabel.textContent = 'Buluşma saati'; }
+  else if(cat === 'gezi' || cat === 'konaklama'){ dtLabel.textContent = 'Gidiş (kalkış)'; }
+  else { dtLabel.textContent = 'Tarih ve saat'; }
+  if(cat==='taksi'){ ensureMap(); initTaksiRideApps(); }
+}
+newCat.onchange = syncTaksiFields;
+
+function switchToCategory(catId){
+  newCat.value = catId;
+  syncTaksiFields();
+}
+
+
+
+
+const TL_PRICE_RE = /(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?)\s*(?:TL|₺|tl)\b/i;
+
+async function runGoogleSearch(query, box, resultsVar){
+  box.style.display = 'block';
+  box.innerHTML = '<div class="small-muted">Google\'da aranıyor...</div>';
+  try{
+    const res = await fetch('/api/deal-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ queries: query, resultsPerPage: 10, maxPagesPerQuery: 1, countryCode: 'tr' })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const items = await res.json();
+    const first = Array.isArray(items) ? items[0] : null;
+    const results = first && Array.isArray(first.organicResults) ? first.organicResults : [];
+    if(!results.length){
+      box.innerHTML = '<div class="small-muted">Sonuç bulunamadı, farklı bir yazımla dene ya da aşağıya kendi linkini yapıştır.</div>';
+      window[resultsVar] = [];
+      return;
+    }
+    window[resultsVar] = results;
+    box.innerHTML = results.slice(0,8).map((r,i) => {
+      const text = (r.title||'') + ' ' + (r.description||'');
+      const m = text.match(TL_PRICE_RE);
+      return `
+      <div class="match-row">
+        <div style="font-weight:500;font-size:13px;">${esc(r.title||r.url)}</div>
+        <div class="small-muted">${esc(r.description||'')}</div>
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;">
+          <a href="${esc(r.url)}" target="_blank" class="chip-btn" style="text-decoration:none;">Sayfayı aç</a>
+          <button type="button" class="chip-btn" onclick="useSearchResult('${resultsVar}', ${i})">Bu linki kullan</button>
+          ${m ? `<button type="button" class="chip-btn" onclick="useSearchPrice('${resultsVar}', ${i}, ${JSON.stringify(m[1].replace(/[.,](?=\d{3})/g,'').replace(',','.'))})">Fiyatı kullan: ${esc(m[1])}₺</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(err){
+    box.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. server.py çalışıyor mu ve sayfayı localhost üzerinden mi açtın, kontrol et. (' + err.message + ')</div>';
+  }
+}
+
+function useSearchResult(resultsVar, i){
+  const r = window[resultsVar][i];
+  if(!r) return;
+  document.getElementById('yemekLink').value = r.url;
+}
+
+function useSearchPrice(resultsVar, i, priceStr){
+  const r = window[resultsVar][i];
+  useSearchResult(resultsVar, i);
+  const price = Number(priceStr);
+  if(price) document.getElementById('newTotal').value = Math.round(price);
+  const noteEl = document.getElementById('newSub');
+  if(!noteEl.value.trim() && r) noteEl.value = r.title;
+}
+
+async function openMenuSearch(){
+  const q = document.getElementById('restSearch').value.trim();
+  if(!q){ alert('Önce restoran/zincir adı yaz.'); return; }
+  await runGoogleSearch(q, document.getElementById('menuResults'), '_menuResults');
+}
+
+async function openDealSearch(){
+  const place = document.getElementById('restSearch').value.trim();
+  const q = (place || 'restoran') + ' 1 alana 1 bedava kampanya';
+  const btn = document.getElementById('dealSearchBtn');
+  btn.disabled = true;
+  btn.textContent = 'Aranıyor...';
+  await runGoogleSearch(q, document.getElementById('dealResults'), '_dealResults');
+  btn.disabled = false;
+  btn.textContent = '1 alana 1 bedava / indirim ara';
+}
+
+/* ---------- GERÇEK OTEL ARAMA (Apify - Booking Scraper) ----------
+   Bu istek artık Apify'a değil, aynı sunucudaki (server.py) /api/hotel-search
+   adresine gidiyor; token orada, sunucu tarafında saklanıyor, tarayıcıya hiç
+   inmiyor. Bu dosyayı server.py olmadan (ör. file:// ile) açarsan bu arama
+   çalışmaz - Konaklama havuzu açmak için yine de link/tutar alanlarını elle
+   doldurabilirsin. */
+async function openMarketSearch(){
+  const q = document.getElementById('marketQuery').value.trim().toLowerCase();
+  const btn = document.getElementById('marketSearchBtn');
+  const box = document.getElementById('marketResults');
+  btn.disabled = true;
+  btn.textContent = 'Aranıyor...';
+  box.style.display = 'block';
+  box.innerHTML = '<div class="small-muted">A101/BİM/ŞOK\'un gerçek haftalık kampanyaları çekiliyor, biraz sürebilir...</div>';
+  try{
+    const res = await fetch('/api/market-deals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ maxItems: 60 })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const items = await res.json();
+    let list = Array.isArray(items) ? items : [];
+    if(q){ list = list.filter(it => ((it.name||'')+' '+(it.brand||'')).toLowerCase().includes(q)); }
+    list = list.filter(it => it.discountRate || it.originalPrice).slice(0, 20);
+    if(!list.length){
+      box.innerHTML = '<div class="small-muted">Sonuç bulunamadı, farklı bir ürün adıyla ya da boş bırakıp tekrar dene.</div>';
+      window._marketResults = [];
+      return;
+    }
+    window._marketResults = list;
+    box.innerHTML = list.map((it,i) => `
+      <div class="match-row" style="cursor:pointer;" onclick="pickMarketResult(${i})">
+        <div style="font-weight:500;font-size:13px;">${esc(it.chain||'')} · ${esc(it.name||'')}</div>
+        <div class="small-muted">${esc(it.brand||'')} ${esc(it.unit||'')}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-weight:600;">${money(it.price)}₺</span>
+          ${it.originalPrice ? `<span class="small-muted" style="text-decoration:line-through;">${money(it.originalPrice)}₺</span>` : ''}
+          ${it.discountRate ? `<span class="chip-btn">%${Math.round(it.discountRate)} indirim</span>` : ''}
+        </div>
+      </div>`).join('');
+  }catch(err){
+    box.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. server.py çalışıyor mu ve sayfayı localhost üzerinden mi açtın, kontrol et. (' + err.message + ')</div>';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'A101 / BİM / ŞOK gerçek indirimlerini ara';
+  }
+}
+
+function pickMarketResult(i){
+  const it = window._marketResults[i];
+  if(!it) return;
+  document.getElementById('marketName').value = it.chain || '';
+  document.getElementById('marketProduct').value = it.name || '';
+  if(!document.getElementById('newTitle').value.trim()) document.getElementById('newTitle').value = `${it.chain} - ${it.name}`;
+  if(it.price) document.getElementById('newTotal').value = Math.round(it.price);
+}
+
+async function openHotelSearch(){
+  const dest = document.getElementById('konakDest').value.trim();
+  if(!dest){ alert('Önce otel adı veya şehir yaz.'); return; }
+  const checkin = document.getElementById('konakIn').value;
+  const checkout = document.getElementById('konakOut').value;
+  if(!checkin || !checkout){
+    alert('Giriş ve çıkış tarihini tam seçmeden fiyat/oda bilgisi gelmiyor. Tarih kutusundaki gün, ay ve yılın hepsine tıklayıp seçtiğinden emin ol (sadece görünmesi yetmiyor, gerçekten tıklanmış olmalı).');
+    return;
+  }
+  const btn = document.getElementById('hotelSearchBtn');
+  const resultsBox = document.getElementById('konakResults');
+  btn.disabled = true;
+  btn.textContent = 'Aranıyor...';
+  resultsBox.style.display = 'block';
+  resultsBox.innerHTML = '<div class="small-muted">Gerçek otel verisi çekiliyor, tarih verdiğinde oda fiyatları da tarandığı için bu 1-3 dakika sürebilir. Lütfen kapatma...</div>';
+
+  const input = {
+    search: dest,
+    maxItems: 5,
+    currency: 'TRY',
+    rooms: 1,
+    adults: 2
+  };
+  if(checkin) input.checkIn = checkin;
+  if(checkout) input.checkOut = checkout;
+
+  try{
+    const res = await fetch('/api/hotel-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input)
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const hotels = await res.json();
+    renderHotelResults(Array.isArray(hotels) ? hotels : []);
+  }catch(err){
+    resultsBox.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. server.py çalışıyor mu ve sayfayı localhost üzerinden mi açtın, kontrol et. (' + err.message + ')</div>';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Gerçek otel ara';
+  }
+}
+
+const TWIN_BED_RE = /twin|single/i;
+
+function roomBedsText(r){
+  if(!Array.isArray(r.bedTypes)) return '';
+  return r.bedTypes.map(bt => Array.isArray(bt.beds) ? bt.beds.join(' ') : '').join(' ');
+}
+
+function findTwinRoom(hotel){
+  const rooms = Array.isArray(hotel.rooms) ? hotel.rooms : [];
+  // Booking oda tiplerini "1 double bed OR 2 single beds" gibi OR listesiyle verir;
+  // "single"/"twin" seçeneği olan odaları uygun say (tek konfigürasyon şart değil).
+  return rooms.find(r => TWIN_BED_RE.test(roomBedsText(r))) || null;
+}
+
+function renderHotelResults(hotels){
+  const resultsBox = document.getElementById('konakResults');
+  const twinOnly = document.getElementById('konakTwinOnly').checked;
+
+  let list = hotels.map(h => ({ hotel: h, twinRoom: findTwinRoom(h) }));
+  if(twinOnly){
+    list = list.filter(x => x.twinRoom);
+  }
+
+  if(!list.length){
+    resultsBox.innerHTML = twinOnly
+      ? '<div class="small-muted">Bu aramada 2 ayrı yataklı oda bulunamadı. Filtreyi kapatıp tekrar deneyebilir ya da otelle iletişime geçip özellikle isteyebilirsin.</div>'
+      : '<div class="small-muted">Sonuç bulunamadı, tarihleri veya şehir adını değiştirip tekrar dene.</div>';
+    window._hotelResults = [];
+    return;
+  }
+
+  resultsBox.innerHTML = list.map((x, i) => {
+    const h = x.hotel;
+    const price = (x.twinRoom && x.twinRoom.price) ? x.twinRoom.price : h.price;
+    const badge = x.twinRoom ? '<span style="color:#0A66C2;font-weight:600;">🛏️🛏️ 2 ayrı yatak</span>' : '';
+    return `
+    <div class="match-row" style="cursor:pointer;" onclick="pickHotelResult(${i})">
+      <div style="font-weight:500;font-size:13px;">${h.name || 'İsimsiz otel'}</div>
+      <div class="small-muted">${h.address && h.address.full ? h.address.full : (h.rating ? 'Puan: ' + h.rating : '')}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:600;">${price ? money(price) + ' ' + (h.currency || 'TRY') : 'Fiyat belirtilmemiş'}</span>
+        ${badge}
+      </div>
+    </div>`;
+  }).join('');
+  window._hotelResults = list;
+}
+
+function pickHotelResult(i){
+  const x = window._hotelResults[i];
+  if(!x) return;
+  const h = x.hotel;
+  document.getElementById('newTitle').value = h.name || document.getElementById('konakDest').value;
+  document.getElementById('konakLink').value = h.url || '';
+  const price = (x.twinRoom && x.twinRoom.price) ? x.twinRoom.price : h.price;
+  if(price) document.getElementById('newTotal').value = Math.round(price);
+  if(x.twinRoom){
+    const noteEl = document.getElementById('newSub');
+    if(!noteEl.value.trim()) noteEl.value = 'Oda: 2 ayrı (tek kişilik) yatak';
+  }
+}
+
+async function openTourSearch(){
+  const dest = document.getElementById('geziDest').value.trim();
+  if(!dest){ alert('Önce nereye gideceğini yaz.'); return; }
+  const btn = document.getElementById('tourSearchBtn');
+  const box = document.getElementById('tourResults');
+  btn.disabled = true;
+  btn.textContent = 'Aranıyor...';
+  box.style.display = 'block';
+  box.innerHTML = '<div class="small-muted">Gerçek tur/aktivite fiyatları çekiliyor...</div>';
+  try{
+    const res = await fetch('/api/tour-search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: dest, maxItems: 8 })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const items = await res.json();
+    const list = Array.isArray(items) ? items : [];
+    if(!list.length){
+      box.innerHTML = '<div class="small-muted">Sonuç bulunamadı, farklı bir şehir/bölge adıyla dene.</div>';
+      window._tourResults = [];
+      return;
+    }
+    window._tourResults = list;
+    box.innerHTML = list.map((t,i) => `
+      <div class="match-row" style="cursor:pointer;" onclick="pickTourResult(${i})">
+        <div style="font-weight:500;font-size:13px;">${esc(t.title||'İsimsiz tur')}</div>
+        <div class="small-muted">${esc(t.city||'')} · ${esc(t.duration||'')}${t.rating?' · ★ '+esc(String(t.rating)):''}</div>
+        <div style="font-weight:600;">${t.price ? money(t.price) + ' ' + (t.currency||'') : 'Fiyat belirtilmemiş'}</div>
+      </div>`).join('');
+  }catch(err){
+    box.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. server.py çalışıyor mu ve sayfayı localhost üzerinden mi açtın, kontrol et. (' + err.message + ')</div>';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Gerçek tur ara';
+  }
+}
+
+function pickTourResult(i){
+  const t = window._tourResults[i];
+  if(!t) return;
+  if(!document.getElementById('newTitle').value.trim()) document.getElementById('newTitle').value = t.title;
+  if(t.price) document.getElementById('newTotal').value = Math.round(t.price);
+  if(t.url){
+    const noteEl = document.getElementById('newSub');
+    if(!noteEl.value.trim()) noteEl.value = t.url;
+  }
+}
+
+/* ---------- REAL ADDRESS AUTOCOMPLETE + MAP (OpenStreetMap, no API key) ---------- */
+let taksiMapObj = null, markerFrom = null, markerTo = null, pointFrom = null, pointTo = null;
+function ensureMap(){
+  const mapEl = document.getElementById('taksiMap');
+  mapEl.style.display = 'block';
+  if(!taksiMapObj){
+    taksiMapObj = L.map('taksiMap').setView([38.4192, 27.1287], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+    }).addTo(taksiMapObj);
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(pos => {
+        if(!pointFrom && !pointTo){
+          taksiMapObj.setView([pos.coords.latitude, pos.coords.longitude], 13);
+        }
+      }, () => {}, {timeout: 5000});
+    }
+  }
+  setTimeout(() => taksiMapObj.invalidateSize(), 100);
+}
+
+let debounceTimer = null;
+function setupAddressField(inputId, suggId, which){
+  const input = document.getElementById(inputId);
+  const suggBox = document.getElementById(suggId);
+  input.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    const q = input.value.trim();
+    if(q.length < 3){ suggBox.style.display = 'none'; return; }
+    debounceTimer = setTimeout(() => searchAddress(q, suggBox, input, which), 350);
+  });
+}
+
+function searchAddress(q, suggBox, input, which, isRetry){
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=6&accept-language=tr&q=' + encodeURIComponent(q);
+  if(!isRetry){
+    suggBox.innerHTML = '<div class="addr-suggestion">Aranıyor...</div>';
+    suggBox.style.display = 'block';
+  }
+  fetch(url).then(r => {
+    if(!r.ok) throw new Error('http '+r.status);
+    return r.json();
+  }).then(results => {
+    if((!results || results.length===0)){
+      const words = q.trim().split(/\s+/);
+      if(!isRetry && words.length > 1){
+        searchAddress(words.reverse().join(' '), suggBox, input, which, true);
+        return;
+      }
+      suggBox.innerHTML = '<div class="addr-suggestion">Sonuç bulunamadı. Kelime sırasını değiştirip dene (ör. "Altınkum, Didim").</div>';
+      return;
+    }
+    suggBox.innerHTML = results.map((r,i) => `<div class="addr-suggestion" data-i="${i}">${esc(r.display_name)}</div>`).join('');
+    suggBox.querySelectorAll('.addr-suggestion').forEach(el => {
+      el.onclick = () => {
+        const r = results[Number(el.dataset.i)];
+        input.value = r.display_name;
+        suggBox.style.display = 'none';
+        placePoint(which, parseFloat(r.lat), parseFloat(r.lon), r.display_name);
+      };
+    });
+  }).catch(() => {
+    suggBox.innerHTML = '<div class="addr-suggestion">Adres araması başarısız. İnternet bağlantını kontrol et.</div>';
+  });
+}
+
+let marketMeetMapObj = null, marketMeetMarker = null, marketMeetPoint = null;
+function placePoint(which, lat, lon, label){
+  if(which === 'marketMeet'){
+    const mapEl = document.getElementById('marketMeetMap');
+    mapEl.style.display = 'block';
+    if(!marketMeetMapObj){
+      marketMeetMapObj = L.map('marketMeetMap').setView([lat,lon], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+      }).addTo(marketMeetMapObj);
+    }
+    setTimeout(() => marketMeetMapObj.invalidateSize(), 100);
+    marketMeetPoint = {lat, lon, label};
+    if(marketMeetMarker) marketMeetMapObj.removeLayer(marketMeetMarker);
+    marketMeetMarker = L.marker([lat,lon]).addTo(marketMeetMapObj).bindPopup(label).openPopup();
+    marketMeetMapObj.setView([lat,lon], 15);
+    document.getElementById('marketMeetGoBtn').style.display = 'block';
+    return;
+  }
+  ensureMap();
+  const point = {lat, lon, label};
+  if(which === 'from'){
+    pointFrom = point;
+    if(markerFrom) taksiMapObj.removeLayer(markerFrom);
+    markerFrom = L.marker([lat,lon]).addTo(taksiMapObj).bindPopup('Nereden: ' + label);
+  } else {
+    pointTo = point;
+    if(markerTo) taksiMapObj.removeLayer(markerTo);
+    markerTo = L.marker([lat,lon]).addTo(taksiMapObj).bindPopup('Nereye: ' + label);
+  }
+  if(pointFrom && pointTo){
+    const bounds = L.latLngBounds([[pointFrom.lat,pointFrom.lon],[pointTo.lat,pointTo.lon]]);
+    taksiMapObj.fitBounds(bounds, {padding:[24,24]});
+    const km = haversineKm({lat:pointFrom.lat,lng:pointFrom.lon},{lat:pointTo.lat,lng:pointTo.lon}) * 1.35;
+    const fare = Math.round(30 + km*22);
+    window._taksiFareEstimate = fare;
+    document.getElementById('taksiFareHint').textContent = `Tahmini mesafe ${km.toFixed(1)} km`;
+    document.getElementById('newTotal').value = fare;
+    updateTaksiPerPerson();
+    maybeFetchGrabPrice();
+    renderTaksiPriceList();
+  } else {
+    taksiMapObj.setView([lat,lon], 13);
+  }
+}
+setupAddressField('addrFrom','suggFrom','from');
+setupAddressField('addrTo','suggTo','to');
+setupAddressField('marketMeetPoint','suggMarketMeet','marketMeet');
+
+function openMarketMeetDirections(){
+  if(!marketMeetPoint) return;
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${marketMeetPoint.lat},${marketMeetPoint.lon}`, '_blank');
+}
+
+const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function formatDateTime(dateStr, timeStr){
+  let parts = [];
+  if(dateStr){
+    const d = new Date(dateStr + 'T00:00:00');
+    parts.push(d.getDate() + ' ' + TR_MONTHS[d.getMonth()]);
+  }
+  if(timeStr) parts.push(timeStr);
+  return parts.join(', ');
+}
+
+function submitPool(){
+  const catId = newCat.value;
+  let title = document.getElementById('newTitle').value.trim();
+  const flightNo = catId === 'lounge' ? document.getElementById('loungeFlightNo').value.trim().toUpperCase() : '';
+  if(!title && catId === 'lounge'){ title = 'Lounge misafir hakkı' + (flightNo ? ' - ' + flightNo : ''); }
+  const isMarket = catId === 'market' || catId === 'yapimarket';
+  const marketMeetLabel = isMarket ? (marketMeetPoint ? marketMeetPoint.label : document.getElementById('marketMeetPoint').value.trim()) : '';
+  if(!title && isMarket){
+    const mn = document.getElementById('marketName').value.trim();
+    const mp = document.getElementById('marketProduct').value.trim();
+    title = [mn, mp].filter(Boolean).join(' - ') || 'Market kampanyası';
+  }
+  const note = document.getElementById('newSub').value.trim();
+  let link = '';
+  if(catId === 'konaklama') link = document.getElementById('konakLink').value.trim();
+  else if(catId === 'yemek') link = document.getElementById('yemekLink').value.trim();
+  const dateStr = document.getElementById('newDate').value;
+  const timeStr = document.getElementById('newTime').value;
+  const total = Number(document.getElementById('newTotal').value);
+  const errEl = document.getElementById('createErr');
+  if(!title || !total || total<=0){
+    errEl.textContent = 'Başlık ve geçerli bir tutar gir.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  const cat = CATS.find(c=>c.id===newCat.value);
+  const when = formatDateTime(dateStr, timeStr);
+  const sub = [when, marketMeetLabel ? 'Buluşma: ' + marketMeetLabel : '', note].filter(Boolean).join(' · ') || 'Az önce açıldı';
+  let maxPeople = null;
+  if(cat.id === 'gezi'){
+    maxPeople = Math.max(2, Math.min(20, Number(document.getElementById('geziMax').value) || 10));
+  }
+  let genderPref = null;
+  if(cat.id === 'konaklama'){
+    const gp = document.getElementById('konakGenderPref').value;
+    genderPref = gp !== 'fark' ? gp : null;
+  } else if(cat.id === 'lounge'){
+    const gp = document.getElementById('loungeGenderPref').value;
+    genderPref = gp !== 'fark' ? gp : null;
+  }
+  POOLS.unshift({cat:cat.id, emoji:cat.emoji, title, sub, joined:1, total, link: link || null, maxPeople, genderPref, confirmed:false, flightNo: flightNo || null, offers: null, acceptedOfferId: null});
+  document.getElementById('newTitle').value='';
+  document.getElementById('newSub').value='';
+  document.getElementById('konakDest').value='';
+  document.getElementById('konakIn').value='';
+  document.getElementById('konakOut').value='';
+  document.getElementById('konakLink').value='';
+  document.getElementById('yemekLink').value='';
+  document.getElementById('dealResults').style.display='none';
+  document.getElementById('dealResults').innerHTML='';
+  document.getElementById('konakGenderPref').value='fark';
+  document.getElementById('konakResults').style.display='none';
+  document.getElementById('konakResults').innerHTML='';
+  document.getElementById('loungeFlightNo').value='';
+  document.getElementById('loungeFlightInfo').style.display='none';
+  document.getElementById('loungeGenderPref').value='fark';
+  document.getElementById('marketMeetPoint').value='';
+  document.getElementById('marketName').value='';
+  document.getElementById('marketProduct').value='';
+  document.getElementById('marketQuery').value='';
+  document.getElementById('marketResults').style.display='none';
+  document.getElementById('marketResults').innerHTML='';
+  document.getElementById('marketMeetMap').style.display='none';
+  document.getElementById('marketMeetGoBtn').style.display='none';
+  marketMeetPoint = null;
+  if(marketMeetMarker && marketMeetMapObj){ marketMeetMapObj.removeLayer(marketMeetMarker); marketMeetMarker = null; }
+  document.getElementById('newDate').value='';
+  document.getElementById('newTime').value='';
+  document.getElementById('newArrDate').value='';
+  document.getElementById('newArrTime').value='';
+  document.getElementById('flightArrBox').style.display='none';
+  document.getElementById('flightNoteInfo').style.display='none';
+  document.getElementById('newTotal').value='';
+  activeCat = 'all';
+  renderCats(); renderPools();
+  showScreen('home');
+}
+
+/* ---------- POOL DETAIL / CHAT ---------- */
+const PHONE_RE = /(\+?\d[\d\s\-\(\)]{6,}\d)/;
+const EMAIL_RE = /[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}/;
+let currentPoolIdx = null;
+let confirmedIds = new Set();
+let chatMessages = {};
+const REQUESTS = [
+  {id:1, name:'Elif', trust:4.9, note:"Geçen ay Roma'da oda paylaştık."},
+  {id:2, name:'Mira', trust:5.0, note:'Temizliğe dikkat ediyor.'},
+  {id:3, name:'Deniz', trust:4.7, note:'Zamanında geldi, planı paylaştı.'}
+];
+
+function openDetail(idx){
+  currentPoolIdx = idx;
+  confirmedIds = new Set();
+  renderDetailHeader();
+  document.getElementById('chatPanel').style.display = 'none';
+  renderRequests();
+  showScreen('detail');
+}
+
+function renderDetailHeader(){
+  const p = POOLS[currentPoolIdx];
+  if(p.cat === 'lounge'){
+    const accepted = p.offers && p.acceptedOfferId ? p.offers.find(o=>o.id===p.acceptedOfferId) : null;
+    document.getElementById('detailHeader').innerHTML = `
+      <div style="font-size:14px;font-weight:500;margin-bottom:6px;">${p.emoji} ${esc(p.title)}${genderBadge(p)}</div>
+      <div class="small-muted" style="margin-bottom:10px;">${esc(p.sub)}${p.flightNo ? ' · Uçuş: ' + esc(p.flightNo) : ''}</div>
+      <div class="row-between" style="margin-bottom:10px;">
+        <span class="small-muted">İstenen fiyat</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:500;">${money(p.total)}₺</span>
+      </div>
+      ${accepted
+        ? `<div class="warn-box" style="color:var(--brand-dark);background:var(--brand-tint);">✓ Satıldı: ${esc(accepted.name)} - ${money(accepted.amount)}₺</div>`
+        : `<div class="small-muted" style="margin-bottom:10px;">Gelen teklifleri aşağıda gör, birini kabul edince havuz o kişiyle kapanır.</div>`}`;
+    return;
+  }
+  const per = p.total / p.joined;
+  const capacityLine = p.maxPeople ? `${p.joined} / ${p.maxPeople} kişi katıldı` : `${p.joined} kişi katıldı`;
+  let confirmBlock = '';
+  if(p.maxPeople){
+    confirmBlock = p.confirmed
+      ? `<div class="warn-box" style="color:var(--brand-dark);background:var(--brand-tint);">✓ Grup onaylandı, katılım kapandı.</div>`
+      : `<button class="btn-secondary" onclick="confirmGroup(${currentPoolIdx})" style="margin-bottom:10px;">Grubu onayla (şu an ${p.joined} kişiyle)</button>`;
+  }
+  document.getElementById('detailHeader').innerHTML = `
+    <div style="font-size:14px;font-weight:500;margin-bottom:6px;">${p.emoji} ${esc(p.title)}${genderBadge(p)}</div>
+    <div class="small-muted" style="margin-bottom:10px;">${esc(p.sub)}</div>
+    ${p.link ? `<a href="${esc(p.link)}" target="_blank" class="chip-btn" style="display:inline-block;text-decoration:none;color:var(--brand);margin-bottom:10px;">🔗 İlgili sayfayı aç</a>` : ''}
+    <div class="row-between" style="margin-bottom:10px;">
+      <span class="small-muted">${capacityLine}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:500;">${money(per)}₺ / kişi</span>
+    </div>
+    ${confirmBlock}`;
+}
+
+function confirmGroup(idx){
+  POOLS[idx].confirmed = true;
+  renderDetailHeader();
+  renderPools();
+}
+
+const LOUNGE_OFFER_NAMES = [
+  {name:'Elif', trust:4.9}, {name:'Mira', trust:5.0}, {name:'Deniz', trust:4.7},
+  {name:'Caner', trust:4.6}, {name:'Bora', trust:4.8}
+];
+function ensureLoungeOffers(p){
+  if(p.offers) return;
+  const pct = [1, 0.95, 0.9, 0.85, 0.8];
+  p.offers = LOUNGE_OFFER_NAMES.map((person, i) => ({
+    id: i+1, name: person.name, trust: person.trust,
+    amount: Math.max(1, Math.round(p.total * pct[i]))
+  }));
+}
+
+function renderLoungeOffers(){
+  const p = POOLS[currentPoolIdx];
+  ensureLoungeOffers(p);
+  document.getElementById('lockNotice').style.display = p.acceptedOfferId ? 'block' : 'none';
+  document.getElementById('lockNotice').textContent = 'Bu ilan satıldı, teklifler kapandı.';
+  document.getElementById('requestList').innerHTML = p.offers.map(o => {
+    const isAccepted = p.acceptedOfferId === o.id;
+    const locked = p.acceptedOfferId && !isAccepted;
+    return `
+    <div class="match-row ${locked?'lock-note':''}" style="${isAccepted?'border-color:var(--brand);':''}">
+      <div class="avatar">${o.name[0]}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;">${o.name} <span class="small-muted">★ ${o.trust}</span></div>
+        <div class="small-muted">Teklif: ${money(o.amount)}₺</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        ${isAccepted
+          ? `<span class="chip-btn">✓ Kabul edildi</span>`
+          : `<button class="chip-btn" ${locked?'disabled':''} onclick="acceptLoungeOffer(${o.id})">Kabul et</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function acceptLoungeOffer(offerId){
+  const p = POOLS[currentPoolIdx];
+  if(p.acceptedOfferId) return;
+  p.acceptedOfferId = offerId;
+  p.confirmed = true;
+  p.joined = 2;
+  renderDetailHeader();
+  renderLoungeOffers();
+  renderPools();
+}
+
+function renderRequests(){
+  const p = POOLS[currentPoolIdx];
+  if(p.cat === 'lounge'){ renderLoungeOffers(); return; }
+  const isGroup = !!p.maxPeople;
+  const isFull = isGroup && p.joined >= p.maxPeople;
+  const lockNotice = document.getElementById('lockNotice');
+  if(isGroup){
+    lockNotice.style.display = isFull ? 'block' : 'none';
+    lockNotice.textContent = 'Havuz maksimum kişi sayısına ulaştı.';
+  } else {
+    lockNotice.style.display = confirmedIds.size > 0 ? 'block' : 'none';
+    lockNotice.textContent = 'Aktif bir eşleşmen var. Yeni biriyle eşleşmeden önce mevcut eşleşmeyi onaylaman veya bitirmen gerekir.';
+  }
+  document.getElementById('requestList').innerHTML = REQUESTS.map(r => {
+    const isConfirmed = confirmedIds.has(r.id);
+    const locked = isGroup ? (isFull && !isConfirmed) : (confirmedIds.size > 0 && !isConfirmed);
+    return `
+    <div class="match-row ${locked?'lock-note':''}" style="${isConfirmed?'border-color:var(--brand);':''}">
+      <div class="avatar">${r.name[0]}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;">${r.name} <span class="small-muted">★ ${r.trust}</span></div>
+        <div class="small-muted">${r.note}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <button class="chip-btn" ${locked?'disabled':''} onclick="openChat(${r.id})">Sohbet</button>
+        ${isConfirmed
+          ? `<button class="chip-btn" onclick="unlockMatch(${r.id})">Bitir</button>`
+          : `<button class="chip-btn" ${locked?'disabled':''} onclick="confirmMatch(${r.id})">Onayla</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function confirmMatch(id){
+  const p = POOLS[currentPoolIdx];
+  if(p.maxPeople && p.joined >= p.maxPeople) return;
+  confirmedIds.add(id);
+  p.joined += 1;
+  renderDetailHeader();
+  renderRequests();
+  renderPools();
+}
+function unlockMatch(id){
+  const p = POOLS[currentPoolIdx];
+  confirmedIds.delete(id);
+  if(p.joined > 1) p.joined -= 1;
+  renderDetailHeader();
+  renderRequests();
+  renderPools();
+}
+
+function openChat(id){
+  const person = REQUESTS.find(r=>r.id===id);
+  if(!chatMessages[id]) chatMessages[id] = [{from:'them', text:'Merhaba, hâlâ açık mı?'}];
+  const panel = document.getElementById('chatPanel');
+  panel.style.display = 'block';
+  panel.innerHTML = `
+    <div style="font-size:12px;font-weight:500;margin-bottom:8px;">${person.name} ile sohbet</div>
+    <div id="msgs" style="display:flex;flex-direction:column;max-height:160px;overflow-y:auto;margin-bottom:8px;"></div>
+    <div class="err-text" id="chatErr" style="display:none;"></div>
+    <div style="display:flex;gap:6px;">
+      <input class="field" id="chatInput" type="text" placeholder="Mesaj yaz" style="margin:0;">
+      <button class="chip-btn" onclick="sendMessage(${id})">Gönder</button>
+    </div>`;
+  renderMsgs(id);
+  panel.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function renderMsgs(id){
+  document.getElementById('msgs').innerHTML = chatMessages[id].map(m => `
+    <div class="chat-bubble ${m.from==='me'?'chat-me':'chat-them'}">${esc(m.text)}</div>`).join('');
+}
+
+function sendMessage(id){
+  const input = document.getElementById('chatInput');
+  const errEl = document.getElementById('chatErr');
+  const text = input.value.trim();
+  if(!text) return;
+  if(PHONE_RE.test(text) || EMAIL_RE.test(text)){
+    errEl.textContent = 'Telefon numarası veya e-posta paylaşamazsın. Konuşmaya uygulama içinden devam et.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  chatMessages[id].push({from:'me', text});
+  input.value = '';
+  renderMsgs(id);
+}
+
+/* ---------- TAKSI TOOL ---------- */
+const PLACES = [
+  {id:'airport', label:'Adnan Menderes Havalimanı', lat:38.2919973, lng:27.1489398},
+  {id:'alsancak', label:'Alsancak', lat:38.438034, lng:27.1426521},
+  {id:'konak', label:'Konak', lat:38.4144802, lng:27.1441227},
+  {id:'bornova', label:'Bornova', lat:38.470982, lng:27.21769},
+  {id:'karsiyaka', label:'Karşıyaka', lat:38.5183996, lng:27.1382404}
+];
+const fareFrom = document.getElementById('fareFrom');
+const fareTo = document.getElementById('fareTo');
+const opts = PLACES.map(p=>`<option value="${p.id}">${p.label}</option>`).join('');
+fareFrom.innerHTML = opts; fareTo.innerHTML = opts; fareTo.value = 'alsancak';
+
+function haversineKm(a,b){
+  const R=6371, dLat=(b.lat-a.lat)*Math.PI/180, dLng=(b.lng-a.lng)*Math.PI/180;
+  const s = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+}
+
+/* ---------- TAKSİ: ÜLKEYE GÖRE GERÇEK UYGULAMA BUTONLARI ---------- */
+const RIDE_APPS_BY_COUNTRY = {
+  TR: [{name:'BiTaksi', kind:'link', url:'https://www.bitaksi.com/'}, {name:'Uber', kind:'uber'}],
+  US: [{name:'Uber', kind:'uber'}, {name:'Lyft', kind:'link', url:'https://www.lyft.com/'}],
+  CA: [{name:'Uber', kind:'uber'}, {name:'Lyft', kind:'link', url:'https://www.lyft.com/'}],
+  GB: [{name:'Uber', kind:'uber'}, {name:'Bolt', kind:'link', url:'https://bolt.eu/'}, {name:'FREE NOW', kind:'link', url:'https://www.free-now.com/'}],
+  DE: [{name:'Uber', kind:'uber'}, {name:'Bolt', kind:'link', url:'https://bolt.eu/'}, {name:'FREE NOW', kind:'link', url:'https://www.free-now.com/'}],
+  FR: [{name:'Uber', kind:'uber'}, {name:'Bolt', kind:'link', url:'https://bolt.eu/'}],
+  ES: [{name:'Uber', kind:'uber'}, {name:'Bolt', kind:'link', url:'https://bolt.eu/'}, {name:'FREE NOW', kind:'link', url:'https://www.free-now.com/'}],
+  IT: [{name:'Uber', kind:'uber'}, {name:'FREE NOW', kind:'link', url:'https://www.free-now.com/'}],
+  IN: [{name:'Uber', kind:'uber'}, {name:'Ola', kind:'link', url:'https://www.olacabs.com/'}],
+  ID: [{name:'Grab', kind:'grab'}, {name:'Uber', kind:'uber'}],
+  TH: [{name:'Grab', kind:'grab'}, {name:'Uber', kind:'uber'}],
+  PH: [{name:'Grab', kind:'grab'}, {name:'Uber', kind:'uber'}],
+  VN: [{name:'Grab', kind:'grab'}],
+  SG: [{name:'Grab', kind:'grab'}, {name:'Uber', kind:'uber'}],
+  MY: [{name:'Grab', kind:'grab'}, {name:'Uber', kind:'uber'}],
+  MM: [{name:'Grab', kind:'grab'}],
+  KH: [{name:'Grab', kind:'grab'}],
+  AE: [{name:'Careem', kind:'link', url:'https://www.careem.com/'}, {name:'Uber', kind:'uber'}],
+  SA: [{name:'Careem', kind:'link', url:'https://www.careem.com/'}, {name:'Uber', kind:'uber'}],
+  EG: [{name:'Careem', kind:'link', url:'https://www.careem.com/'}, {name:'Uber', kind:'uber'}],
+  QA: [{name:'Careem', kind:'link', url:'https://www.careem.com/'}, {name:'Uber', kind:'uber'}],
+  JO: [{name:'Careem', kind:'link', url:'https://www.careem.com/'}, {name:'Uber', kind:'uber'}],
+  MX: [{name:'Uber', kind:'uber'}, {name:'DiDi', kind:'link', url:'https://www.didiglobal.com/'}, {name:'Cabify', kind:'link', url:'https://cabify.com/'}],
+  BR: [{name:'Uber', kind:'uber'}, {name:'99', kind:'link', url:'https://99app.com/'}],
+  AR: [{name:'Uber', kind:'uber'}, {name:'Cabify', kind:'link', url:'https://cabify.com/'}],
+  CO: [{name:'Uber', kind:'uber'}, {name:'DiDi', kind:'link', url:'https://www.didiglobal.com/'}],
+  CL: [{name:'Uber', kind:'uber'}, {name:'Cabify', kind:'link', url:'https://cabify.com/'}],
+  DEFAULT: [{name:'Uber', kind:'uber'}]
+};
+
+let taksiCountryCode = null;
+
+function initTaksiRideApps(){
+  if(taksiCountryCode){ renderRideApps(taksiCountryCode); return; }
+  renderTaksiPriceList();
+  const statusEl = document.getElementById('taksiCountryStatus');
+  const selectEl = document.getElementById('taksiCountrySelect');
+  if(selectEl.options.length === 0){
+    const list = Object.keys(RIDE_APPS_BY_COUNTRY).filter(c=>c!=='DEFAULT').sort();
+    selectEl.innerHTML = '<option value="">Ülke seç...</option>' +
+      list.map(c => `<option value="${c}">${c}</option>`).join('') +
+      '<option value="DEFAULT">Diğer</option>';
+    selectEl.onchange = () => { if(selectEl.value){ taksiCountryCode = selectEl.value; renderRideApps(taksiCountryCode); } };
+  }
+  if(!navigator.geolocation){
+    statusEl.textContent = 'Konum desteklenmiyor, ülkeni seç:';
+    selectEl.style.display = 'block';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const {latitude, longitude} = pos.coords;
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+      .then(r => r.json())
+      .then(data => {
+        const cc = data && data.address && data.address.country_code ? data.address.country_code.toUpperCase() : null;
+        if(cc && RIDE_APPS_BY_COUNTRY[cc]){
+          taksiCountryCode = cc;
+          statusEl.textContent = `Konum: ${data.address.country || cc} (${cc})`;
+          renderRideApps(cc);
+        } else {
+          statusEl.textContent = cc ? `${cc} için özel uygulama listemiz yok, ülkeni seç ya da Diğer'i kullan:` : 'Ülke tespit edilemedi, seç:';
+          selectEl.value = cc || '';
+          selectEl.style.display = 'block';
+          if(cc) { taksiCountryCode = cc; renderRideApps('DEFAULT'); }
+        }
+      }).catch(() => {
+        statusEl.textContent = 'Konum çözümlenemedi, ülkeni seç:';
+        selectEl.style.display = 'block';
+      });
+  }, () => {
+    statusEl.textContent = 'Konum izni verilmedi, ülkeni seç:';
+    selectEl.style.display = 'block';
+  });
+}
+
+function renderRideApps(countryCode){
+  renderTaksiPriceList();
+  maybeFetchGrabPrice();
+}
+
+function renderTaksiPriceList(){
+  const box = document.getElementById('taksiAppButtons');
+  const apps = RIDE_APPS_BY_COUNTRY[taksiCountryCode] || RIDE_APPS_BY_COUNTRY.DEFAULT;
+  if(!pointFrom || !pointTo){
+    box.innerHTML = '<div class="small-muted">Fiyatları görmek için önce nereden/nereye seç.</div>';
+    return;
+  }
+  const est = window._taksiFareEstimate || 0;
+  box.innerHTML = apps.map(app => {
+    const usesReal = app.kind === 'grab' && window._grabPriceText;
+    const priceLabel = usesReal ? window._grabPriceText : `~${money(est)}₺ (tahmini)`;
+    return `
+    <div class="match-row" style="cursor:pointer;" onclick="chooseRideAppAndCreatePool('${app.kind}', '${(app.url||'').replace(/'/g,"")}', '${esc(app.name).replace(/'/g,"")}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:500;">${esc(app.name)}</span>
+        <span style="font-weight:600;">${priceLabel}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openRideApp(kind, url){
+  if(kind === 'uber'){
+    let u = 'https://m.uber.com/ul/?action=setPickup';
+    if(pointFrom){ u += `&pickup[latitude]=${pointFrom.lat}&pickup[longitude]=${pointFrom.lon}`; } else { u += '&pickup=my_location'; }
+    if(pointTo){ u += `&dropoff[latitude]=${pointTo.lat}&dropoff[longitude]=${pointTo.lon}`; }
+    window.open(u, '_blank');
+  } else if(kind === 'grab'){
+    window.open('https://www.grab.com/', '_blank');
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function chooseRideAppAndCreatePool(kind, url, appName){
+  openRideApp(kind, url);
+  const titleEl = document.getElementById('newTitle');
+  if(!titleEl.value.trim() && pointFrom && pointTo){
+    const shortFrom = (pointFrom.label||'').split(',')[0];
+    const shortTo = (pointTo.label||'').split(',')[0];
+    titleEl.value = `${shortFrom} - ${shortTo} (${appName})`;
+  }
+  submitPool();
+}
+
+async function maybeFetchGrabPrice(){
+  const apps = RIDE_APPS_BY_COUNTRY[taksiCountryCode] || [];
+  const hasGrab = apps.some(a => a.kind === 'grab');
+  const infoBox = document.getElementById('grabPriceInfo');
+  window._grabPriceText = null;
+  if(!hasGrab || !pointFrom || !pointTo){ infoBox.style.display = 'none'; return; }
+  infoBox.style.display = 'block';
+  infoBox.innerHTML = '<div class="small-muted">Grab gerçek fiyatı çekiliyor...</div>';
+  try{
+    const res = await fetch('/api/grab-price', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pickupLatitude: pointFrom.lat, pickupLongitude: pointFrom.lon,
+        dropoffLatitude: pointTo.lat, dropoffLongitude: pointTo.lon
+      })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const items = await res.json();
+    const g = Array.isArray(items) ? items[0] : null;
+    if(!g){ infoBox.innerHTML = '<div class="small-muted">Grab fiyatı alınamadı.</div>'; return; }
+    window._grabPriceText = g.priceText || (g.minPrice+'-'+g.maxPrice+' '+(g.currency||''));
+    infoBox.innerHTML = `<div class="small-muted">Grab gerçek fiyatı listede güncellendi.</div>`;
+    renderTaksiPriceList();
+  }catch(err){
+    infoBox.innerHTML = '<div class="small-muted">Grab fiyatı alınamadı (server.py çalışıyor mu?).</div>';
+  }
+}
+
+function updateTaksiPerPerson(){
+  const total = Number(document.getElementById('newTotal').value) || 0;
+  const people = Math.max(1, Number(document.getElementById('taksiPersonCount').value) || 1);
+  const hint = document.getElementById('taksiPerPersonHint');
+  hint.textContent = people > 1 ? `${people} kişiye bölünce kişi başı ~${money(total/people)}₺` : '';
+}
+document.getElementById('taksiPersonCount').addEventListener('input', updateTaksiPerPerson);
+
+function renderFare(){
+  const from = PLACES.find(p=>p.id===fareFrom.value);
+  const to = PLACES.find(p=>p.id===fareTo.value);
+  const people = Number(document.getElementById('farePeople').value);
+  const resultEl = document.getElementById('fareResult');
+  if(from.id===to.id){ resultEl.innerHTML = '<div class="small-muted">Farklı bir nokta seç.</div>'; return; }
+  const roadKm = haversineKm(from,to)*1.35;
+  const minutes = Math.round(roadKm/28*60);
+  const fare = 30 + roadKm*22;
+  const per = fare/people;
+  resultEl.innerHTML = `
+    <div class="row-between small-muted" style="margin-bottom:10px;">
+      <span>${roadKm.toFixed(1)} km</span><span>~${minutes} dk</span>
+    </div>
+    <div class="row-between" style="border-top:0.5px solid var(--line);padding-top:10px;">
+      <div><div class="small-muted">tahmini toplam</div><div style="font-family:'IBM Plex Mono',monospace;">${money(fare)}₺</div></div>
+      <div style="text-align:right;"><div class="small-muted">kişi başı (${people})</div><div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:500;">${money(per)}₺</div></div>
+    </div>
+    <div class="small-muted" style="margin-top:8px;">Mesafeye dayalı yaklaşık tahmin, gerçek ücretten farklı olabilir.</div>`;
+}
+fareFrom.onchange = renderFare; fareTo.onchange = renderFare;
+document.getElementById('farePeople').oninput = renderFare;
+
+/* ---------- KONAKLAMA TOOL ---------- */
+const HOTELS = [
+  {id:1, name:'Hotel Arts Barcelona', city:'Barselona', rating:4.5, pricePerNight:5200},
+  {id:2, name:'Novotel Paris Centre Tour Eiffel', city:'Paris', rating:4.1, pricePerNight:4600},
+  {id:3, name:'Otel Roma Termini', city:'Roma', rating:4.0, pricePerNight:2600}
+];
+const ROOMMATES = [
+  {name:'Elif', gender:'f', trust:4.9, note:"Geçen ay Roma'da oda paylaştık."},
+  {name:'Kaan', gender:'m', trust:4.6, note:'Sessiz, saygılı bir oda arkadaşıydı.'},
+  {name:'Mira', gender:'f', trust:5.0, note:'Temizliğe dikkat ediyor.'},
+  {name:'Deniz', gender:'m', trust:4.7, note:'Zamanında geldi.'}
+];
+let selectedHotel = null;
+function renderHotels(){
+  const q = document.getElementById('hotelSearch').value.trim().toLocaleLowerCase('tr');
+  const list = HOTELS.filter(h => !q || h.name.toLocaleLowerCase('tr').includes(q) || h.city.toLocaleLowerCase('tr').includes(q));
+  document.getElementById('hotelList').innerHTML = list.map(h => `
+    <div class="match-row" style="cursor:pointer;${selectedHotel && selectedHotel.id===h.id?'border-color:var(--brand);':''}" onclick="selectHotel(${h.id})">
+      <div class="avatar">🏨</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;">${h.name}</div>
+        <div class="small-muted">${h.city} · ★ ${h.rating}</div>
+      </div>
+    </div>`).join('');
+}
+function selectHotel(id){
+  selectedHotel = HOTELS.find(h=>h.id===id);
+  renderHotels();
+  document.getElementById('hotelDetail').style.display = 'block';
+  document.getElementById('roommateSection').style.display = 'block';
+  document.getElementById('hotelDetail').innerHTML = `
+    <div style="font-size:13px;font-weight:500;margin-bottom:8px;">${selectedHotel.name} · 2 kişilik oda</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <input class="field" id="checkin" type="date" style="margin:0;">
+      <input class="field" id="checkout" type="date" style="margin:0;">
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span class="small-muted">Kişi sayısı</span>
+      <input type="range" min="1" max="4" step="1" value="2" id="hotelPeople" style="flex:1;">
+      <span id="hotelPeopleOut">2</span>
+    </div>
+    <div id="hotelPriceOut"></div>`;
+  document.getElementById('checkin').onchange = renderHotelPrice;
+  document.getElementById('checkout').onchange = renderHotelPrice;
+  document.getElementById('hotelPeople').oninput = renderHotelPrice;
+  renderRoommates();
+}
+function renderHotelPrice(){
+  const ci = document.getElementById('checkin').value;
+  const co = document.getElementById('checkout').value;
+  const people = Number(document.getElementById('hotelPeople').value);
+  document.getElementById('hotelPeopleOut').textContent = people;
+  const nights = (!ci||!co) ? 0 : Math.max(0, Math.round((new Date(co)-new Date(ci))/86400000));
+  const out = document.getElementById('hotelPriceOut');
+  if(nights<=0){ out.innerHTML = '<div class="small-muted">Giriş ve çıkış tarihini seç.</div>'; return; }
+  const total = selectedHotel.pricePerNight * nights;
+  const per = total/people;
+  out.innerHTML = `
+    <div class="small-muted" style="margin-bottom:8px;">${nights} gece × ${money(selectedHotel.pricePerNight)}₺</div>
+    <div class="row-between" style="border-top:0.5px solid var(--line);padding-top:10px;">
+      <div><div class="small-muted">toplam</div><div style="font-family:'IBM Plex Mono',monospace;">${money(total)}₺</div></div>
+      <div style="text-align:right;"><div class="small-muted">kişi başı</div><div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:500;">${money(per)}₺</div></div>
+    </div>`;
+}
+function renderRoommates(){
+  const g = document.getElementById('genderFilter').value;
+  const list = g==='all' ? ROOMMATES : ROOMMATES.filter(r=>r.gender===g);
+  document.getElementById('roommateList').innerHTML = list.map(r => `
+    <div class="match-row">
+      <div class="avatar">${r.name[0]}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:500;">${r.name} <span class="small-muted">★ ${r.trust}</span></div>
+        <div class="small-muted">${r.note}</div>
+      </div>
+    </div>`).join('');
+}
+document.getElementById('hotelSearch').oninput = renderHotels;
+document.getElementById('genderFilter').onchange = renderRoommates;
+
+/* ---------- YOL ARKADASI ---------- */
+let compMode = 'flight';
+const btnModeFlight = document.getElementById('btnModeFlight');
+const btnModeGround = document.getElementById('btnModeGround');
+function styleCompMode(){
+  btnModeFlight.classList.toggle('active', compMode==='flight');
+  btnModeGround.classList.toggle('active', compMode==='ground');
+  document.getElementById('compCode').style.display = compMode==='flight' ? 'block' : 'none';
+  document.getElementById('flightLookupBtn').style.display = compMode==='flight' ? 'block' : 'none';
+  document.getElementById('flightInfo').style.display = 'none';
+  document.getElementById('compFrom').style.display = compMode==='ground' ? 'block' : 'none';
+  document.getElementById('compTo').style.display = compMode==='ground' ? 'block' : 'none';
+  document.getElementById('compTime').style.display = compMode==='ground' ? 'block' : 'none';
+}
+btnModeFlight.onclick = () => { compMode='flight'; styleCompMode(); };
+btnModeGround.onclick = () => { compMode='ground'; styleCompMode(); };
+styleCompMode();
+
+const COMPANION_SEED = [
+  {key:'flight|xq916|2026-09-12', name:'Elif', trust:4.9},
+  {key:'flight|xq916|2026-09-12', name:'Kaan', trust:4.6},
+  {key:'ground|izmir|çeşme|2026-09-13|18:00', name:'Mira', trust:5.0}
+];
+/* ---------- NOT ALANINDA UÇUŞ NO OTOMATİK TESPİT (Yeni Havuz formu) ---------- */
+const FLIGHT_CODE_RE = /^[A-Za-z]{2,3}\s?\d{1,4}[A-Za-z]?$/;
+const FLIGHT_NOTE_CATS = ['konaklama', 'gezi'];
+let noteFlightDebounce = null;
+document.getElementById('newSub').addEventListener('input', () => {
+  clearTimeout(noteFlightDebounce);
+  const val = document.getElementById('newSub').value.trim();
+  if(!FLIGHT_NOTE_CATS.includes(newCat.value) || !FLIGHT_CODE_RE.test(val)){
+    document.getElementById('flightNoteInfo').style.display = 'none';
+    document.getElementById('flightArrBox').style.display = 'none';
+    return;
+  }
+  noteFlightDebounce = setTimeout(() => lookupFlightForNote(val), 700);
+});
+
+let loungeFlightDebounce = null;
+document.getElementById('loungeFlightNo').addEventListener('input', () => {
+  clearTimeout(loungeFlightDebounce);
+  const val = document.getElementById('loungeFlightNo').value.trim();
+  const infoBox = document.getElementById('loungeFlightInfo');
+  if(!FLIGHT_CODE_RE.test(val)){ infoBox.style.display = 'none'; return; }
+  loungeFlightDebounce = setTimeout(() => lookupFlightForLounge(val), 700);
+});
+
+async function lookupFlightForLounge(code){
+  const infoBox = document.getElementById('loungeFlightInfo');
+  const fieldEl = document.getElementById('loungeFlightNo');
+  infoBox.style.display = 'block';
+  infoBox.innerHTML = '<div class="small-muted">Uçuş bilgisi kontrol ediliyor...</div>';
+  try{
+    const f = await fetchFlightStatus(code, document.getElementById('newDate').value);
+    if(fieldEl.value.trim().toUpperCase() !== code.trim().toUpperCase()) return;
+    if(!f || f.status === 'Unknown' || (!f.origin && !f.destination)){
+      infoBox.innerHTML = '<div class="small-muted">Bu kodla bir uçuş bulunamadı, yine de ilanı açabilirsin.</div>';
+      return;
+    }
+    const origin = f.origin || {}, destination = f.destination || {};
+    const dep = parseDateTimeParts(origin.scheduledTime);
+    infoBox.innerHTML = `<div class="small-muted">✈️ ${esc(f.flightNumber||code)}: ${esc(origin.iataCode||'?')} → ${esc(destination.iataCode||'?')}${f.status?' · '+esc(f.status):''}</div>`;
+    if(dep.date) document.getElementById('newDate').value = dep.date;
+    if(dep.time) document.getElementById('newTime').value = dep.time;
+  }catch(err){
+    if(fieldEl.value.trim().toUpperCase() !== code.trim().toUpperCase()) return;
+    infoBox.innerHTML = '<div class="small-muted">Uçuş bilgisi alınamadı (server.py çalışıyor mu?).</div>';
+  }
+}
+
+function parseDateTimeParts(s){
+  if(!s) return {date:'', time:''};
+  const m = String(s).match(/(\d{4}-\d{2}-\d{2})[T ]?(\d{2}:\d{2})?/);
+  return m ? {date:m[1]||'', time:m[2]||''} : {date:'', time:''};
+}
+
+// Senin gerçek biletindeki uçuşlar - API'den bulunamazsa (ör. çok ileri tarihli
+// olduğu için) buradan anında ve güvenilir şekilde gelsin. Yeni bir uçuş eklemek
+// için aynı formatta bir satır daha ekleyebilirsin.
+const KNOWN_FLIGHTS = {
+  'XQ0916': { flightNumber:'XQ0916', origin:{iataCode:'ADB', scheduledTime:'2026-09-28 16:50'}, destination:{iataCode:'CDG', scheduledTime:'2026-09-28 19:40'}, status:'Scheduled' },
+  'XQ0917': { flightNumber:'XQ0917', origin:{iataCode:'CDG', scheduledTime:'2026-10-01 13:40'}, destination:{iataCode:'ADB', scheduledTime:'2026-10-01 18:05'}, status:'Scheduled' }
+};
+
+async function fetchFlightStatus(code, dateStr){
+  const known = KNOWN_FLIGHTS[code.trim().toUpperCase()];
+  if(known) return known;
+  const input = { target: 'flightStatus', flightNumbers: [code], maxItems: 1 };
+  if(dateStr) input.flightDate = dateStr;
+  const res = await fetch('/api/flight-lookup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input)
+  });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
+  const items = await res.json();
+  return Array.isArray(items) ? items[0] : null;
+}
+
+async function lookupFlightForNote(code){
+  const infoBox = document.getElementById('flightNoteInfo');
+  const noteEl = document.getElementById('newSub');
+  infoBox.style.display = 'block';
+  infoBox.innerHTML = '<div class="small-muted">Uçuş bilgisi kontrol ediliyor...</div>';
+  try{
+    const f = await fetchFlightStatus(code, document.getElementById('newDate').value);
+    // Bu sorgu ge geldiğinde kullanıcı yazmaya devam etmiş olabilir - hâlâ aynı
+    // kodu mu yazıyor kontrol et, değilse bu (artık eski) sonucu görmezden gel.
+    if(noteEl.value.trim().toUpperCase() !== code.trim().toUpperCase()) return;
+    if(!f || f.status === 'Unknown' || (!f.origin && !f.destination)){
+      infoBox.innerHTML = '<div class="small-muted">Bu kodla bir uçuş bulunamadı, normal not olarak bırakabilirsin.</div>';
+      return;
+    }
+    const origin = f.origin || {};
+    const destination = f.destination || {};
+    const dep = parseDateTimeParts(origin.scheduledTime);
+    const arr = parseDateTimeParts(destination.scheduledTime);
+    infoBox.innerHTML = `<div class="small-muted">✈️ ${esc(f.flightNumber||code)}: ${esc(origin.iataCode||'?')} → ${esc(destination.iataCode||'?')}${f.status?' · '+esc(f.status):''}</div>`;
+    if(dep.date){ document.getElementById('newDate').value = dep.date; }
+    if(dep.time){ document.getElementById('newTime').value = dep.time; }
+    if(arr.date || arr.time){
+      document.getElementById('flightArrBox').style.display = 'block';
+      if(arr.date) document.getElementById('newArrDate').value = arr.date;
+      if(arr.time) document.getElementById('newArrTime').value = arr.time;
+    }
+  }catch(err){
+    if(noteEl.value.trim().toUpperCase() !== code.trim().toUpperCase()) return;
+    infoBox.innerHTML = '<div class="small-muted">Uçuş bilgisi alınamadı (server.py çalışıyor mu?).</div>';
+  }
+}
+
+async function openFlightLookup(){
+  const code = document.getElementById('compCode').value.trim();
+  if(!code){ alert('Önce uçuş numarası yaz (ör. XQ0916).'); return; }
+  const btn = document.getElementById('flightLookupBtn');
+  const infoBox = document.getElementById('flightInfo');
+  btn.disabled = true;
+  btn.textContent = 'Getiriliyor...';
+  infoBox.style.display = 'block';
+  infoBox.innerHTML = '<div class="small-muted">Gerçek uçuş bilgisi çekiliyor...</div>';
+
+  try{
+    const f = await fetchFlightStatus(code, document.getElementById('compDate').value);
+    if(!f || f.status === 'Unknown' || (!f.origin && !f.destination)){
+      infoBox.innerHTML = '<div class="small-muted">Bu uçuş numarasıyla sonuç bulunamadı. Kodu ve tarihi kontrol et (ör. XQ0916).</div>';
+      return;
+    }
+    const origin = f.origin || {};
+    const destination = f.destination || {};
+    infoBox.innerHTML = `
+      <div style="font-weight:500;font-size:13px;margin-bottom:4px;">${esc(f.flightNumber || code)}</div>
+      <div class="small-muted">${esc(origin.iataCode || '?')} → ${esc(destination.iataCode || '?')}</div>
+      <div class="small-muted">Kalkış: ${esc(origin.scheduledTime || '-')}  ·  Varış: ${esc(destination.scheduledTime || '-')}</div>
+      ${f.status ? `<div class="small-muted">Durum: ${esc(f.status)}</div>` : ''}`;
+    // Tarih alanı boşsa, uçuşun kalkış tarihini otomatik doldurmayı dene
+    const dateEl = document.getElementById('compDate');
+    const dep = parseDateTimeParts(origin.scheduledTime);
+    if(!dateEl.value && dep.date){ dateEl.value = dep.date; }
+  }catch(err){
+    infoBox.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. server.py çalışıyor mu ve sayfayı localhost üzerinden mi açtın, kontrol et. (' + err.message + ')</div>';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Uçuşu getir';
+  }
+}
+
+function findCompanions(){
+  const from = document.getElementById('compFrom').value.trim();
+  const to = document.getElementById('compTo').value.trim();
+  const date = document.getElementById('compDate').value;
+  const time = document.getElementById('compTime').value;
+  const errEl = document.getElementById('compErr');
+  let key;
+  if(compMode==='flight'){
+    const code = document.getElementById('compCode').value.trim().toLocaleLowerCase('tr');
+    if(!code || !date){ errEl.textContent='Uçuş no ve tarih gir.'; errEl.style.display='block'; return; }
+    key = 'flight|'+code+'|'+date;
+  } else {
+    if(!from||!to||!date||!time){ errEl.textContent='Güzergah, tarih ve saat gir.'; errEl.style.display='block'; return; }
+    key = 'ground|'+from.toLocaleLowerCase('tr')+'|'+to.toLocaleLowerCase('tr')+'|'+date+'|'+time;
+  }
+  errEl.style.display='none';
+  const found = COMPANION_SEED.filter(s=>s.key===key);
+  document.getElementById('compMine').style.display='block';
+  document.getElementById('compMine').innerHTML = `<div class="small-muted" style="margin-bottom:4px;">senin girişin</div><div style="font-size:13px;">${esc(from||'—')} → ${esc(to||'—')} ${time?'· '+time:''}</div>`;
+  const matchesEl = document.getElementById('compMatches');
+  if(found.length===0){
+    matchesEl.innerHTML = '<div class="small-muted">Bu bilgide henüz kimse yok. Havuz senin girişinle oluşturuldu.</div>';
+    return;
+  }
+  matchesEl.innerHTML = `<div class="small-muted" style="margin-bottom:6px;">Aynı yolculukta ${found.length} kişi daha var</div>` +
+    found.map(p => `
+    <div class="match-row">
+      <div class="avatar">${p.name[0]}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:500;">${p.name} <span class="small-muted">★ ${p.trust}</span></div></div>
+      <button class="chip-btn">Sohbet</button>
+    </div>`).join('');
+}
+
+
+
+/* ---------- ADMIN ---------- */
+const COUNTRIES = [
+  {flag:'🇹🇷', name:'Türkiye', count:9840},
+  {flag:'🇩🇪', name:'Almanya', count:2310},
+  {flag:'🇬🇧', name:'İngiltere', count:1580},
+  {flag:'🇫🇷', name:'Fransa', count:1120},
+  {flag:'🇮🇹', name:'İtalya', count:940}
+];
+const maxCount = Math.max(...COUNTRIES.map(c=>c.count));
+document.getElementById('countryList').innerHTML = COUNTRIES.map(c => `
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+    <span style="width:20px;">${c.flag}</span>
+    <span class="small-muted" style="width:70px;flex-shrink:0;">${c.name}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c.count/maxCount*100)}%;"></div></div>
+    <span class="small-muted" style="width:48px;text-align:right;">${c.count.toLocaleString('tr-TR')}</span>
+  </div>`).join('');
+
+const ADMIN_USERS = [
+  {name:'Elif Kaya', city:'İzmir', country:'Türkiye', trust:4.9, completed:12, reviews:['Zamanında ve düzenli.', 'Tekrar paylaşırım.']},
+  {name:'Kaan Demir', city:'Ankara', country:'Türkiye', trust:4.6, completed:7, reviews:['Sessiz ve saygılı.']},
+  {name:'Mira Schulz', city:'Berlin', country:'Almanya', trust:5.0, completed:15, reviews:['Mükemmel iletişim.', 'Temizliğe dikkat ediyor.']},
+  {name:'Deniz Aksoy', city:'Çeşme', country:'Türkiye', trust:4.7, completed:5, reviews:['Planı önceden paylaştı.']}
+];
+function renderAdminUsers(){
+  const q = document.getElementById('adminSearch').value.trim().toLocaleLowerCase('tr');
+  const list = ADMIN_USERS.filter(u => !q || u.name.toLocaleLowerCase('tr').includes(q) || u.city.toLocaleLowerCase('tr').includes(q));
+  document.getElementById('adminUsers').innerHTML = list.map(u => `
+    <div class="match-row" style="cursor:pointer;" onclick='showAdminDetail(${ADMIN_USERS.indexOf(u)})'>
+      <div class="avatar">${u.name[0]}</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:500;">${u.name}</div>
+        <div class="small-muted">${u.city}, ${u.country}</div>
+      </div>
+      <div class="small-muted">★ ${u.trust} · ${u.completed} havuz</div>
+    </div>`).join('');
+}
+function showAdminDetail(idx){
+  const u = ADMIN_USERS[idx];
+  const el = document.getElementById('adminDetail');
+  el.style.display = 'block';
+  el.innerHTML = `<div style="font-size:13px;font-weight:500;margin-bottom:6px;">${u.name} · ★ ${u.trust}</div>` +
+    `<div class="small-muted" style="margin-bottom:8px;">${u.completed} tamamlanmış havuz</div>` +
+    u.reviews.map(r => `<div style="font-size:12px;padding:6px 0;border-top:0.5px solid var(--line);">${r}</div>`).join('');
+}
+document.getElementById('adminSearch').oninput = renderAdminUsers;
+
+/* ---------- INIT ---------- */
+renderCats();
+renderPools();
+renderFare();
+renderHotels();
+renderAdminUsers();
+
+/* ---------- REAL GPS LOCATION LABEL ---------- */
+function flagFromCountryCode(cc){
+  if(!cc || cc.length!==2) return '';
+  return String.fromCodePoint(...[...cc.toUpperCase()].map(c => 127397 + c.charCodeAt(0)));
+}
+function updateLocationLabel(){
+  if(!navigator.geolocation){ return; }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const lat = pos.coords.latitude, lon = pos.coords.longitude;
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1&accept-language=tr`)
+      .then(r => r.json())
+      .then(data => {
+        const a = data.address || {};
+        const city = a.city || a.town || a.village || a.county || a.state || 'Konum';
+        document.getElementById('locPill').innerHTML = '📍 ' + esc(city);
+        document.getElementById('locFlag').textContent = flagFromCountryCode(a.country_code) || '';
+      })
+      .catch(() => {});
+  }, () => {
+    document.getElementById('locPill').innerHTML = '📍 Konum kapalı';
+  }, {timeout: 8000});
+}
+updateLocationLabel();
+</script>
+</body>
+</html>
