@@ -41,6 +41,7 @@
   .pool-price .strike{font-size:10px;color:var(--ink-faint);text-decoration:line-through;}
   .btn-primary{width:100%;background:var(--brand);color:#fff;border:none;padding:12px;border-radius:8px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;}
   .btn-secondary{width:100%;background:var(--card);color:var(--ink);border:0.5px solid var(--line);padding:11px;border-radius:8px;font-size:13px;font-family:inherit;cursor:pointer;}
+  .gyg-btn{flex:1;background:#FF5533;color:#fff;border:none;padding:11px;border-radius:8px;font-size:13px;font-weight:700;font-family:'Manrope',sans-serif;cursor:pointer;}
   .field{width:100%;padding:10px 12px;border:0.5px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:8px;background:var(--card);color:var(--ink);}
   select.field{appearance:none;}
   .section-title{font-size:13px;font-weight:500;margin:14px 0 8px;}
@@ -160,10 +161,18 @@
       </div>
       <div style="display:flex;gap:8px;margin-bottom:10px;">
         <button type="button" class="btn-secondary" id="tourSearchBtn" onclick="openTourSearch()" style="flex:1;">Gerçek tur ara</button>
-        <button type="button" class="btn-secondary" onclick="window.open('https://www.getyourguide.com/s/?q='+encodeURIComponent(document.getElementById('geziDest').value.trim()||''),'_blank')">Viator/GYG siteyi aç</button>
+        <button type="button" class="gyg-btn" onclick="window.open('https://www.getyourguide.com/s/?q='+encodeURIComponent(document.getElementById('geziDest').value.trim()||''),'_blank')">GetYourGuide'da ara</button>
       </div>
       <div id="tourResults" style="display:none;margin-bottom:10px;"></div>
       <div class="small-muted" style="margin-bottom:8px;">Gerçek sitede gezi bul, adını ve kişi başı fiyatını görüp aşağıya kendin gir.</div>
+
+      <div class="small-muted" style="margin:10px 0 6px;">Başka bir sitede tur mu buldun? Linkini yapıştır:</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <input class="field" id="tourLinkInput" type="url" placeholder="https://..." style="flex:1;margin:0;">
+        <button type="button" class="btn-secondary" onclick="fetchLinkPreview()" style="width:auto;padding:0 14px;">Getir</button>
+      </div>
+      <div id="linkPreviewBox" style="display:none;margin-bottom:10px;"></div>
+
       <label class="small-muted">Maksimum kişi sayısı (en fazla 20)</label>
       <input class="field" id="geziMax" type="number" min="2" max="20" value="10">
     </div>
@@ -887,6 +896,29 @@ function pickHotelResult(i){
   }
 }
 
+const CURRENCY_GUESS = [
+  {kw:['türkiye','turkey','istanbul','izmir','ankara','antalya','bodrum','kapadokya','cappadocia','kayseri','göreme','goreme','pamukkale','fethiye','didim','özkonak'], cur:'TRY'},
+  {kw:['abd','usa','amerika','new york','miami','los angeles','san francisco','las vegas'], cur:'USD'},
+  {kw:['ingiltere','uk','london','londra'], cur:'GBP'},
+  {kw:['japonya','japan','tokyo','osaka','kyoto'], cur:'JPY'},
+  {kw:['tayland','thailand','bangkok','phuket'], cur:'THB'},
+  {kw:['isviçre','switzerland','zurich','zürih','geneva','cenevre'], cur:'CHF'},
+  {kw:['bae','uae','dubai','abu dhabi'], cur:'AED'},
+];
+function guessCurrencyForQuery(q){
+  const s = (q||'').toLocaleLowerCase('tr');
+  for(const g of CURRENCY_GUESS){ if(g.kw.some(k=>s.includes(k))) return g.cur; }
+  return 'EUR';
+}
+async function getExchangeRate(from, to){
+  if(from === to) return 1;
+  try{
+    const r = await fetch(`https://api.frankfurter.app/latest?from=${from}&to=${to}`);
+    const d = await r.json();
+    return (d.rates && d.rates[to]) ? d.rates[to] : null;
+  }catch(e){ return null; }
+}
+
 async function openTourSearch(){
   const dest = document.getElementById('geziDest').value.trim();
   if(!dest){ alert('Önce nereye gideceğini yaz.'); return; }
@@ -910,10 +942,15 @@ async function openTourSearch(){
       window._tourResults = [];
       return;
     }
-    window._tourResults = list;
-    box.innerHTML = list.map((t,i) => {
-      const f = normalizeTour(t);
-      return `
+    const targetCur = guessCurrencyForQuery(dest);
+    const sourceCur = (list.find(t=>t.currency)||{}).currency || 'EUR';
+    const rate = await getExchangeRate(sourceCur, targetCur);
+    window._tourResults = list.map(t => {
+      const f = normalizeTour(t, dest);
+      if(f.price && rate){ f.price = f.price * rate; f.currency = targetCur; }
+      return f;
+    });
+    box.innerHTML = window._tourResults.map((f,i) => `
       <div class="match-row" style="gap:10px;">
         ${f.image ? `<img src="${esc(f.image)}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
         <div style="flex:1;min-width:0;cursor:pointer;" onclick="pickTourResult(${i})">
@@ -922,21 +959,20 @@ async function openTourSearch(){
           <div style="font-weight:600;">${f.price ? money(f.price) + ' ' + f.currency : 'Fiyat belirtilmemiş'}</div>
         </div>
         <button type="button" class="chip-btn" onclick="event.stopPropagation(); addTourResult(${i})">Ekle</button>
-      </div>`;
-    }).join('');
+      </div>`).join('');
   }catch(err){
-    box.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. server.py çalışıyor mu ve sayfayı localhost üzerinden mi açtın, kontrol et. (' + err.message + ')</div>';
+    box.innerHTML = '<div class="err-text" style="display:block;">Arama başarısız oldu. (' + err.message + ')</div>';
   }finally{
     btn.disabled = false;
     btn.textContent = 'Gerçek tur ara';
   }
 }
 
-function normalizeTour(t){
-  const title = t.title || t.name || t.tourTitle || t.activityTitle || t.tour_name || 'İsimsiz tur';
+function normalizeTour(t, destText){
+  let title = t.title || t.name || t.tourTitle || t.activityTitle || t.tour_name || '';
   const price = t.price ?? t.priceFrom ?? t.price_from ?? t.startingPrice ?? (t.pricing && t.pricing.price) ?? null;
   const currency = t.currency || t.currencyCode || (t.pricing && t.pricing.currency) || '';
-  const city = t.city || t.location || t.destination || '';
+  const city = t.city || t.location || t.destination || destText || '';
   const duration = t.duration || t.durationText || '';
   const rating = t.rating != null ? (Math.round(t.rating*10)/10) : (t.reviewScore || null);
   let image = null;
@@ -944,33 +980,65 @@ function normalizeTour(t){
   else if(typeof t.image === 'string') image = t.image;
   else if(t.thumbnail) image = t.thumbnail;
   const url = t.url || t.link || t.pageUrl || '';
+  if(!title.trim()) title = [city, duration].filter(Boolean).join(' · ') || 'Tur';
   return { title, price, currency, city, duration, rating, image, url };
 }
 
 function pickTourResult(i){
-  const t = window._tourResults[i];
-  if(!t) return;
-  const f = normalizeTour(t);
+  const f = window._tourResults[i];
+  if(!f) return;
   if(!document.getElementById('newTitle').value.trim()) document.getElementById('newTitle').value = f.title;
   if(f.price) document.getElementById('newTotal').value = Math.round(f.price);
   if(f.url){
     const noteEl = document.getElementById('newSub');
     if(!noteEl.value.trim()) noteEl.value = f.url;
-    window.open(f.url, '_blank');
   }
 }
 
 function addTourResult(i){
-  const t = window._tourResults[i];
-  if(!t) return;
-  const f = normalizeTour(t);
+  const f = window._tourResults[i];
+  if(!f) return;
   document.getElementById('newTitle').value = f.title;
   if(f.price) document.getElementById('newTotal').value = Math.round(f.price);
-  const noteEl = document.getElementById('newSub');
-  if(f.url) noteEl.value = f.url;
-  if(f.url) window.open(f.url, '_blank');
+  if(f.url) document.getElementById('newSub').value = f.url;
   submitPool();
 }
+
+async function fetchLinkPreview(){
+  const url = document.getElementById('tourLinkInput').value.trim();
+  if(!url){ alert('Önce bir link yapıştır.'); return; }
+  const box = document.getElementById('linkPreviewBox');
+  box.style.display = 'block';
+  box.innerHTML = '<div class="small-muted">Sayfa bilgisi çekiliyor...</div>';
+  try{
+    const res = await fetch('/api/link-preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    const data = await res.json();
+    window._linkPreview = { url, image: data.image || null, title: data.title || 'Tur' };
+    box.innerHTML = `
+      <div class="match-row" style="gap:10px;">
+        ${data.image ? `<img src="${esc(data.image)}" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0;">` : ''}
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:500;font-size:13px;">${esc(window._linkPreview.title)}</div>
+        </div>
+        <button type="button" class="chip-btn" onclick="addLinkPreview()">Ekle</button>
+      </div>`;
+  }catch(err){
+    box.innerHTML = '<div class="err-text" style="display:block;">Sayfa bilgisi alınamadı, linki kontrol et.</div>';
+  }
+}
+
+function addLinkPreview(){
+  const p = window._linkPreview;
+  if(!p) return;
+  document.getElementById('newTitle').value = p.title;
+  document.getElementById('newSub').value = p.url;
+  submitPool();
+}
+
 
 /* ---------- REAL ADDRESS AUTOCOMPLETE + MAP (OpenStreetMap, no API key) ---------- */
 let taksiMapObj = null, markerFrom = null, markerTo = null, pointFrom = null, pointTo = null;
