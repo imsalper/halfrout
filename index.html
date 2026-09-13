@@ -10,7 +10,8 @@
 <style>
   :root{
     --paper:#F5F7FA; --ink:#0B1A33; --ink-muted:#5E6B7D; --ink-faint:#98A2B3;
-    --brand:#0A66C2; --brand-dark:#004182; --brand-tint:#E3EFFC;
+      --brand:#7C3AED; --brand-dark:#5B21B6; --brand-tint:#F1EAFE;
+          --cat-taksi:#F59E0B; --cat-gezi:#06B6D4; --cat-konaklama:#8B5CF6; --cat-yemek:#EF4444; --cat-alisveris:#EC4899; --cat-giyim:#F97316; --cat-market:#10B981; --cat-yapimarket:#A16207; --cat-lounge:#6366F1; --cat-diger:#64748B;
     --line:#DDE3EC; --card:#FFFFFF; --danger:#C0392B; --danger-tint:#FBEAE8;
     --warn:#B7791F; --warn-tint:#FDF3DD;
   }
@@ -26,11 +27,32 @@
   .cat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:14px;}
   .cat-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;font-size:10px;border-radius:8px;border:0.5px solid var(--line);background:var(--card);color:var(--ink-muted);cursor:pointer;font-family:inherit;}
   .cat-btn.active{background:var(--brand);color:#fff;border-color:var(--brand);}
+  .cat-btn.active[data-cat="taksi"]{background:var(--cat-taksi);border-color:var(--cat-taksi);}
+  .cat-btn.active[data-cat="gezi"]{background:var(--cat-gezi);border-color:var(--cat-gezi);}
+  .cat-btn.active[data-cat="konaklama"]{background:var(--cat-konaklama);border-color:var(--cat-konaklama);}
+  .cat-btn.active[data-cat="yemek"]{background:var(--cat-yemek);border-color:var(--cat-yemek);}
+  .cat-btn.active[data-cat="alisveris"]{background:var(--cat-alisveris);border-color:var(--cat-alisveris);}
+  .cat-btn.active[data-cat="giyim"]{background:var(--cat-giyim);border-color:var(--cat-giyim);}
+  .cat-btn.active[data-cat="market"]{background:var(--cat-market);border-color:var(--cat-market);}
+  .cat-btn.active[data-cat="yapimarket"]{background:var(--cat-yapimarket);border-color:var(--cat-yapimarket);}
+  .cat-btn.active[data-cat="lounge"]{background:var(--cat-lounge);border-color:var(--cat-lounge);}
+  .cat-btn.active[data-cat="diger"]{background:var(--cat-diger);border-color:var(--cat-diger);}
   .cat-btn svg{width:18px;height:18px;}
   .tools-row{display:flex;gap:8px;margin-bottom:14px;}
   .tool-card{flex:1;background:var(--card);border:0.5px solid var(--line);border-radius:10px;padding:10px;font-size:12px;color:var(--ink);cursor:pointer;text-align:left;font-family:inherit;}
   .tool-card b{display:block;font-size:12px;margin-top:4px;}
   .pool-card{display:flex;border-radius:10px;overflow:hidden;border:0.5px solid var(--line);background:var(--card);margin-bottom:8px;cursor:pointer;}
+  .pool-card{border-left:4px solid var(--line);}
+  .pool-card.cat-taksi{border-left-color:var(--cat-taksi);}
+  .pool-card.cat-gezi{border-left-color:var(--cat-gezi);}
+  .pool-card.cat-konaklama{border-left-color:var(--cat-konaklama);}
+  .pool-card.cat-yemek{border-left-color:var(--cat-yemek);}
+  .pool-card.cat-alisveris{border-left-color:var(--cat-alisveris);}
+  .pool-card.cat-giyim{border-left-color:var(--cat-giyim);}
+  .pool-card.cat-market{border-left-color:var(--cat-market);}
+  .pool-card.cat-yapimarket{border-left-color:var(--cat-yapimarket);}
+  .pool-card.cat-lounge{border-left-color:var(--cat-lounge);}
+  .pool-card.cat-diger{border-left-color:var(--cat-diger);}
   .pool-info{flex:1;min-width:0;padding:11px 12px;}
   .pool-title{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .pool-sub{font-size:11px;color:var(--ink-muted);margin-bottom:6px;}
@@ -614,7 +636,7 @@ function renderPools(){
     if(p.cat === 'lounge'){
       const sold = !!p.acceptedOfferId;
       return `
-      <div class="pool-card" onclick="openDetail(${idx})">
+      <div class="pool-card cat-${p.cat}" onclick="openDetail(${idx})">
         <div class="pool-info">
           <div class="pool-title">${p.emoji} ${esc(p.title)}${genderBadge(p)}</div>
           <div class="pool-sub">${esc(p.sub)}</div>
@@ -628,7 +650,7 @@ function renderPools(){
     }
     const per = p.total / p.joined;
     return `
-    <div class="pool-card" onclick="openDetail(${idx})">
+    <div class="pool-card cat-${p.cat}" onclick="openDetail(${idx})">
       <div class="pool-info">
         <div class="pool-title">${p.emoji} ${esc(p.title)}${genderBadge(p)}</div>
         <div class="pool-sub">${esc(p.sub)}</div>
